@@ -216,7 +216,6 @@ public class Binarize extends JPanel {
 		javax.swing.SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				createAndShowGUI();
-
 			}
 		});
 	}
@@ -243,7 +242,7 @@ public class Binarize extends JPanel {
 		case 0: // Schwellwert
 			// binarize50(dstPixels);
 			int threshold = thresholdSlider.getValue();
-			binarizeSlider(dstPixels, threshold);
+			binarizeByThreshold(dstPixels, threshold);
 			showSlider = true;
 			break;
 		case 1: // ISO-Data-Algorithmus
@@ -286,20 +285,21 @@ public class Binarize extends JPanel {
 
 	}
 
+	HashMap<Integer, Integer> mAppearancePa = new HashMap<Integer, Integer>();
+	HashMap<Integer, Integer> mAppearancePb = new HashMap<Integer, Integer>();
+
 	private void calulateISODataAlgorithm(int[] pixels) {
 		calulateISODataAlgorithm(pixels, getThreshold(pixels), 0);
 	}
 
-	HashMap<Integer, Integer> mAppearancePa = new HashMap<Integer, Integer>();
-	HashMap<Integer, Integer> mAppearancePb = new HashMap<Integer, Integer>();
-
 	private void calulateISODataAlgorithm(int[] pixels, float threshold,
 			int iteration) {
-		float pa = 0.0f, pb = 0.0f, all = 0.0f;
+
+		float pa = 0.0f, pb = 0.0f;
 		mAppearancePa.clear();
 		mAppearancePb.clear();
 		for (int i = 0; i < pixels.length; i++) {
-			// calculate the gray value for the scala 0 - 255
+			// calculate the gray value for the range 0 - 255
 			int gray = ((pixels[i] & 0xff) + ((pixels[i] & 0xff00) >> 8) + ((pixels[i] & 0xff0000) >> 16)) / 3;
 
 			if (gray < threshold) {
@@ -326,7 +326,7 @@ public class Binarize extends JPanel {
 		if (newThresold != threshold && iteration < 100)
 			calulateISODataAlgorithm(pixels, newThresold, ++iteration);
 		else
-			binarizeSlider(pixels, (int) (newThresold / 1));
+			binarizeByThreshold(pixels, (int) (newThresold / 1));
 	}
 
 	private void addAppearance(int value, HashMap<Integer, Integer> appearance) {
@@ -337,7 +337,7 @@ public class Binarize extends JPanel {
 		}
 	}
 
-	private void binarizeSlider(int[] pixels, int threshold) {
+	private void binarizeByThreshold(int[] pixels, int threshold) {
 		for (int i = 0; i < pixels.length; i++) {
 			int gray = ((pixels[i] & 0xff) + ((pixels[i] & 0xff00) >> 8) + ((pixels[i] & 0xff0000) >> 16)) / 3;
 			pixels[i] = gray < threshold ? black : white;
@@ -360,11 +360,16 @@ public class Binarize extends JPanel {
 
 		for (int i = 0; i < pixels.length; i++) {
 			int pixelColor = pixels[i];
+
+			// set the pixel to white
 			newPixels[i] = white;
 
+			// check if the original pixel is black and all 4 positions around
+			// the pixels are valid
 			if (pixelColor == black
-					&& checkBoarder(pixels, i, imageWidth, imageHeight)) {
+					&& checkBorder(pixels, i, imageWidth, imageHeight)) {
 
+				// check if all 4 pixels around the position are black
 				if (pixels[i - imageWidth] == black
 						&& pixels[i + imageWidth] == black
 						&& pixels[i + 1] == black && pixels[i - 1] == black) {
@@ -379,7 +384,20 @@ public class Binarize extends JPanel {
 		}
 	}
 
-	public boolean checkBoarder(int[] pixels, int pos, int width, int height) {
+	/**
+	 * Checking if the position is within the border of the image
+	 * 
+	 * @param pixels
+	 *            the image
+	 * @param pos
+	 *            position to check
+	 * @param width
+	 *            image width
+	 * @param height
+	 *            image height
+	 * @return true if is within the border of the image or false if not
+	 */
+	public boolean checkBorder(int[] pixels, int pos, int width, int height) {
 		// --- generell boarders
 
 		if (pos == 0) { // is first pos
