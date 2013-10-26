@@ -294,10 +294,12 @@ public class Binarize extends JPanel {
 
 	private void calulateISODataAlgorithm(int[] pixels, float threshold,
 			int iteration) {
-
 		float pa = 0.0f, pb = 0.0f;
+		// clear the hashmaps
 		mAppearancePa.clear();
 		mAppearancePb.clear();
+
+		// count how often a gray value appears
 		for (int i = 0; i < pixels.length; i++) {
 			// calculate the gray value for the range 0 - 255
 			int gray = ((pixels[i] & 0xff) + ((pixels[i] & 0xff00) >> 8) + ((pixels[i] & 0xff0000) >> 16)) / 3;
@@ -322,11 +324,17 @@ public class Binarize extends JPanel {
 		ua = (1 / pa) * ua;
 		ub = (1 / pb) * ub;
 
+		// calculate the new threshold
 		float newThresold = (ua + ub) / 2.0f;
-		if (newThresold != threshold && iteration < 100)
+
+		// check if the threshold is the same as the last one or 100 iterations
+		// are
+		// done
+		if (newThresold != threshold && iteration < 100) {
 			calulateISODataAlgorithm(pixels, newThresold, ++iteration);
-		else
+		} else {
 			binarizeByThreshold(pixels, (int) (newThresold / 1));
+		}
 	}
 
 	private void addAppearance(int value, HashMap<Integer, Integer> appearance) {
