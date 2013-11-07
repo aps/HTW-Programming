@@ -9,21 +9,13 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import java.util.NavigableSet;
 import java.util.Random;
-import java.util.TreeSet;
-import java.util.Vector;
 
-import javax.management.loading.MLet;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -238,70 +230,84 @@ public class FloodFilling extends JPanel {
 				+ mStackSize);
 	}
 
-	LinkedHashSet<LinkedHashSet<Integer>> kolisionen = new LinkedHashSet<LinkedHashSet<Integer>>();
+	LinkedHashSet<LinkedHashSet<Integer>> collisionList = new LinkedHashSet<LinkedHashSet<Integer>>();
 
 	private void sequentielMarking(int[] pixels, int width, int height) {
-		collisions.clear();
-		kolisionen.clear();
+		collisionList.clear();
 
-		LinkedList<Integer> menge;
-		LinkedHashSet<Integer> temp;
+		LinkedHashSet<Integer> collisions;
 
+		// iterate over the height of the picture
 		for (int v = 0; v < height - 1; v++) {
+			// iterate over the width of the picture
 			for (int u = 0; u < width - 1; u++) {
+				// get the current position
 				int pos = I(u, v, width);
+				// check if the pixel is relevant
 				if (pixels[pos] == black) {
-					// printMe("pos(" + pos + ") is black");
+					// get the labels around
 					int[] labels = checkMask(pixels, u, v, width);
 					if (labels.length == 0) {
 						pixels[pos] = mLabel++;
 					} else if ((labels.length == 1)) {
 						pixels[pos] = labels[0];
 					} else {
+						// sort the labels
 						Arrays.sort(labels);
 
-						temp = new LinkedHashSet<Integer>();
-						for (int labelPos = 0; labelPos < labels.length; labelPos++) {
-							temp.add(labels[labelPos]);
-						}
-						pixels[pos] = labels[0];
-						kolisionen.add(temp);
+						LinkedHashSet<Integer> item;
+						boolean otherCollisionExists = false;
 
-						// menge = new LinkedList<Integer>();
-						// for (int labelPos = 0; labelPos < labels.length;
-						// labelPos++) {
-						// menge.add(labels[labelPos]);
-						// }
-						// Collections.sort(menge);
-						// if (collisions.containsKey(menge.get(0))) {
-						// menge.addAll(collisions.get(menge.get(0)));
-						// }
-						// collisions.put(menge.get(0), menge);
-						// pixels[pos] = menge.get(0);
-						// menge = null;
+						collisions = new LinkedHashSet<Integer>();
+						// iterate over all collisions sets
+						for (Iterator<LinkedHashSet<Integer>> outer = collisionList
+								.iterator(); outer.hasNext();) {
+							item = outer.next();
+
+							// check each collision set for the new collision
+							for (int labelPos = 0; labelPos < labels.length; labelPos++) {
+								if (item.contains(labels[labelPos])) {
+									otherCollisionExists = true;
+								}
+								collisions.add(labels[labelPos]);
+							}
+							// add the additional collision to the set
+							if (otherCollisionExists) {
+								collisionList.remove(item);
+								item.addAll(collisions);
+								collisionList.add(item);
+								break;
+							}
+						}
+
+						pixels[pos] = labels[0];
+						if (!otherCollisionExists) {
+							collisionList.add(collisions);
+						}
+
 					}
 				}
-				// System.out.print("," + pixels[pos]);
 			}
-			// System.out.println("");
 		}
-
-		resolveColisions(pixels);
+		// solve the collision and apply correct color
+		solveColisions(pixels);
 	}
 
-	private void resolveColisions(int[] pixels) {
-		// printMe("Colisions: " + collisions.size());
-
+	private void solveColisions(int[] pixels) {
 		int firstItem = -1;
-		for (Iterator<LinkedHashSet<Integer>> outer = kolisionen.iterator(); outer
+		// iterate over the collisions list
+		for (Iterator<LinkedHashSet<Integer>> outer = collisionList.iterator(); outer
 				.hasNext();) {
 			LinkedHashSet<Integer> item = outer.next();
 			firstItem = -1;
+			// iterate over the labels the collision set
 			for (Iterator<Integer> it = item.iterator(); it.hasNext();) {
 				int value = it.next();
 				if (firstItem == -1) {
 					firstItem = value;
 				} else {
+					// replace all collision labels with the first label of the
+					// set
 					for (int i = 0; i < pixels.length; i++) {
 						if (pixels[i] == value) {
 							pixels[i] = firstItem;
@@ -311,27 +317,13 @@ public class FloodFilling extends JPanel {
 			}
 		}
 
-		// printMe("coll: " + collisions.size());
-		// for (Integer key : collisions.keySet()) {
-		// LinkedList<Integer> col = collisions.get(key);
-		// for (int item : col) {
-		// for (int i = 0; i < pixels.length; i++) {
-		// if (pixels[i] == item)
-		// pixels[i] = key;
-		// }
-		// }
-		// }
-
 		for (int i = 0; i < pixels.length; i++) {
 			if (pixels[i] != white) {
 				pixels[i] = getColor(pixels[i]);
 			}
-			// System.out.print(" " + pixels[i]);
 		}
 
 	}
-
-	private LinkedHashMap<Integer, LinkedList<Integer>> collisions = new LinkedHashMap<Integer, LinkedList<Integer>>();
 
 	private int[] checkMask(int[] pixels, int u, int v, int width) {
 		LinkedHashSet<Integer> items = new LinkedHashSet<Integer>();
