@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Random;
+import java.util.Stack;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -76,9 +77,10 @@ public class FloodFilling extends JPanel {
 
 		// selector for the binarization method
 		JLabel methodText = new JLabel("Methode:");
-		String[] methodNames = { "depth first", "depth frist 8",
-				"breadth first", "breadth first 8", "region marking",
-				"original" };
+		String[] methodNames = { "depth first", "depth first 8er Kernel",
+				"breadth first", "breadth first 8er Kernel", "region marking",
+				"original", "depth first /w check", "depth first 8er w/ check",
+				"breadth first w/ check", "breadth first 8er w/ check" };
 
 		methodList = new JComboBox(methodNames);
 		methodList.setSelectedIndex(0); // set initial method
@@ -158,6 +160,9 @@ public class FloodFilling extends JPanel {
 
 	int originalPixels[];
 
+	float mb = 1024 * 1024;
+	Runtime runtime = Runtime.getRuntime();
+
 	protected void floodImage() {
 		if (originalPixels != null) {
 			mImageView.setPixels(originalPixels.clone());
@@ -178,10 +183,14 @@ public class FloodFilling extends JPanel {
 		mLabel = 2;
 		mStackSize = 0;
 
-		Runtime runtime = Runtime.getRuntime();
 		runtime.gc();
+		float memoryUsedBefore = (runtime.totalMemory() - runtime.freeMemory())
+				/ mb;
+		System.out.println("Used Memory before: \t" + memoryUsedBefore);
+
 		switch (methodList.getSelectedIndex()) {
 		case 0: // depth first
+
 			for (int i = 0; i < pixels.length; i++) {
 				if (pixels[i] == black) {
 					depthFirst(pixels, i, width, height);
@@ -216,13 +225,56 @@ public class FloodFilling extends JPanel {
 		case 4: // sequentially marking
 			sequentielMarking(pixels, width, height);
 			break;
+
+		case 5: // originl
+			break;
+		case 6: // depth first with pre
+			for (int i = 0; i < pixels.length; i++) {
+				if (pixels[i] == black) {
+					depthFirstWithPreChecking(pixels, i, width, height);
+					mLabel++;
+				}
+			}
+			break;
+		case 7: // depth first 8er with pre
+			for (int i = 0; i < pixels.length; i++) {
+				if (pixels[i] == black) {
+					depthFirst8WithPreChecking(pixels, i, width, height);
+					mLabel++;
+				}
+			}
+			break;
+		case 8: // breadth first with pre check
+			for (int i = 0; i < pixels.length; i++) {
+				if (pixels[i] == black) {
+					breadthFirstWithPreChecking(pixels, i, width, height);
+					mLabel++;
+				}
+			}
+			break;
+		case 9: // breadth first 8er kernel with pre check
+			for (int i = 0; i < pixels.length; i++) {
+				if (pixels[i] == black) {
+					breadthFirst8WithPreChecking(pixels, i, width, height);
+					mLabel++;
+				}
+			}
+			break;
 		default:
-			printMe("done nothing...");
+			printMe("default ...");
 			break;
 		}
 
+		float memoryUsedAfter = (runtime.totalMemory() - runtime.freeMemory())
+				/ mb;
+		System.out.println("Used Memory after: \t" + memoryUsedAfter);
+
 		mImageView.setPixels(pixels);
 		long time = System.currentTimeMillis() - startTime;
+
+		printMe("Used memory for the "
+				+ methodList.getSelectedItem().toString() + " algorithm: \t"
+				+ (memoryUsedAfter - memoryUsedBefore) + " mb");
 
 		frame.pack();
 
@@ -279,7 +331,6 @@ public class FloodFilling extends JPanel {
 								break;
 							}
 						}
-
 						pixels[pos] = labels[0];
 						if (!otherCollisionExists) {
 							collisionList.add(collisions);
@@ -317,6 +368,7 @@ public class FloodFilling extends JPanel {
 			}
 		}
 
+		// set the color based on the label
 		for (int i = 0; i < pixels.length; i++) {
 			if (pixels[i] != white) {
 				pixels[i] = getColor(pixels[i]);
@@ -359,6 +411,16 @@ public class FloodFilling extends JPanel {
 		return res;
 	}
 
+	/**
+	 * calculate the pixel position for the pixel array based on the u and v
+	 * coords
+	 * 
+	 * @param u
+	 * @param v
+	 * @param w
+	 *            width of the image
+	 * @return position in the pixels array
+	 */
 	private int I(int u, int v, int w) {
 		return u + (v * w);
 	}
@@ -388,6 +450,98 @@ public class FloodFilling extends JPanel {
 		} while (!stack.isEmpty());
 	}
 
+	private void breadthFirst8WithPreChecking(int[] pixels, int initialPos,
+			int width, int height) {
+		stack.addFirst(initialPos);
+		int currentPos;
+		do {
+			currentPos = stack.removeLast();
+			if (checkBorder(pixels, currentPos, width, height)
+					&& pixels[currentPos] == black) {
+				pixels[currentPos] = getColor(this.mLabel);
+
+				if (checkBorder(pixels, currentPos + 1, width, height)
+						&& pixels[currentPos + 1] == black) {
+					stack.addFirst(currentPos + 1);
+				}
+				if (checkBorder(pixels, currentPos + width, width, height)
+						&& pixels[currentPos + width] == black) {
+					stack.addFirst(currentPos + width);
+				}
+				if (checkBorder(pixels, currentPos + 1 + width, width, height)
+						&& pixels[currentPos + 1 + width] == black) {
+					stack.addFirst(currentPos + 1 + width);
+				}
+				if (checkBorder(pixels, currentPos - 1 + width, width, height)
+						&& pixels[currentPos - 1 + width] == black) {
+					stack.addFirst(currentPos - 1 + width);
+				}
+				if (checkBorder(pixels, currentPos - width, width, height)
+						&& pixels[currentPos - width] == black) {
+					stack.addFirst(currentPos - width);
+				}
+				if (checkBorder(pixels, currentPos - 1 - width, width, height)
+						&& pixels[currentPos - 1 - width] == black) {
+					stack.addFirst(currentPos - 1 - width);
+				}
+				if (checkBorder(pixels, currentPos + 1 - width, width, height)
+						&& pixels[currentPos + 1 - width] == black) {
+					stack.addFirst(currentPos + 1 - width);
+				}
+				if (checkBorder(pixels, currentPos - 1, width, height)
+						&& pixels[currentPos - 1] == black) {
+					stack.addFirst(currentPos - 1);
+				}
+
+				if (mStackSize < stack.size()) {
+					mStackSize = stack.size();
+				}
+			}
+		} while (!stack.isEmpty());
+	}
+
+	/**
+	 * breadth first with checking before adding to queue
+	 * 
+	 * @param pixels
+	 * @param initialPos
+	 * @param width
+	 * @param height
+	 */
+	private void breadthFirstWithPreChecking(int[] pixels, int initialPos,
+			int width, int height) {
+		stack.addFirst(initialPos);
+		int currentPos;
+		do {
+			currentPos = stack.removeLast();
+			if (checkBorder(pixels, currentPos, width, height)
+					&& pixels[currentPos] == black) {
+				pixels[currentPos] = getColor(this.mLabel);
+
+				if (checkBorder(pixels, currentPos + 1, width, height)
+						&& pixels[currentPos + 1] == black) {
+					stack.addFirst(currentPos + 1);
+				}
+				if (checkBorder(pixels, currentPos + width, width, height)
+						&& pixels[currentPos + width] == black) {
+					stack.addFirst(currentPos + width);
+				}
+				if (checkBorder(pixels, currentPos - width, width, height)
+						&& pixels[currentPos - width] == black) {
+					stack.addFirst(currentPos - width);
+				}
+				if (checkBorder(pixels, currentPos - 1, width, height)
+						&& pixels[currentPos - 1] == black) {
+					stack.addFirst(currentPos - 1);
+				}
+
+				if (mStackSize < stack.size()) {
+					mStackSize = stack.size();
+				}
+			}
+		} while (!stack.isEmpty());
+	}
+
 	private void breadthFirst(int[] pixels, int initialPos, int width,
 			int height) {
 		stack.addFirst(initialPos);
@@ -397,6 +551,7 @@ public class FloodFilling extends JPanel {
 			if (checkBorder(pixels, currentPos, width, height)
 					&& pixels[currentPos] == black) {
 				pixels[currentPos] = getColor(this.mLabel);
+
 				stack.addFirst(currentPos + 1);
 				stack.addFirst(currentPos + width);
 				stack.addFirst(currentPos - width);
@@ -430,6 +585,13 @@ public class FloodFilling extends JPanel {
 		}
 	}
 
+	/**
+	 * Generate a color for the given label
+	 * 
+	 * @param label
+	 *            the label to generate the color for
+	 * @return RGB color value
+	 */
 	private int generateColor(int label) {
 		Random rnd = new Random();
 		float r, g, b;
@@ -456,10 +618,45 @@ public class FloodFilling extends JPanel {
 			if (checkBorder(pixels, currentPos, width, height)
 					&& pixels[currentPos] == black) {
 				pixels[currentPos] = getColor(this.mLabel);
+
 				stack.addFirst(currentPos + 1);
 				stack.addFirst(currentPos + width);
 				stack.addFirst(currentPos - width);
 				stack.addFirst(currentPos - 1);
+
+				if (mStackSize < stack.size()) {
+					mStackSize = stack.size();
+				}
+			}
+		} while (!stack.isEmpty());
+	}
+
+	private void depthFirstWithPreChecking(int[] pixels, int initialPos,
+			int width, int height) {
+		stack.addFirst(initialPos);
+		int currentPos;
+		do {
+			currentPos = stack.removeFirst();
+			if (checkBorder(pixels, currentPos, width, height)
+					&& pixels[currentPos] == black) {
+				pixels[currentPos] = getColor(this.mLabel);
+
+				if (checkBorder(pixels, currentPos + 1, width, height)
+						&& pixels[currentPos + 1] == black) {
+					stack.addFirst(currentPos + 1);
+				}
+				if (checkBorder(pixels, currentPos + width, width, height)
+						&& pixels[currentPos + width] == black) {
+					stack.addFirst(currentPos + width);
+				}
+				if (checkBorder(pixels, currentPos - width, width, height)
+						&& pixels[currentPos - width] == black) {
+					stack.addFirst(currentPos - width);
+				}
+				if (checkBorder(pixels, currentPos - 1, width, height)
+						&& pixels[currentPos - 1] == black) {
+					stack.addFirst(currentPos - 1);
+				}
 
 				if (mStackSize < stack.size()) {
 					mStackSize = stack.size();
@@ -484,6 +681,56 @@ public class FloodFilling extends JPanel {
 				stack.addFirst(currentPos - 1 - width);
 				stack.addFirst(currentPos + 1 - width);
 				stack.addFirst(currentPos - 1);
+
+				if (mStackSize < stack.size()) {
+					mStackSize = stack.size();
+				}
+			}
+		} while (!stack.isEmpty());
+	}
+
+	private void depthFirst8WithPreChecking(int[] pixels, int initialPos,
+			int width, int height) {
+		stack.addFirst(initialPos);
+		int currentPos;
+		do {
+			currentPos = stack.removeFirst();
+			if (checkBorder(pixels, currentPos, width, height)
+					&& pixels[currentPos] == black) {
+				pixels[currentPos] = getColor(this.mLabel);
+
+				if (checkBorder(pixels, currentPos + 1, width, height)
+						&& pixels[currentPos + 1] == black) {
+					stack.addFirst(currentPos + 1);
+				}
+				if (checkBorder(pixels, currentPos + width, width, height)
+						&& pixels[currentPos + width] == black) {
+					stack.addFirst(currentPos + width);
+				}
+				if (checkBorder(pixels, currentPos + 1 + width, width, height)
+						&& pixels[currentPos + 1 + width] == black) {
+					stack.addFirst(currentPos + 1 + width);
+				}
+				if (checkBorder(pixels, currentPos - 1 + width, width, height)
+						&& pixels[currentPos - 1 + width] == black) {
+					stack.addFirst(currentPos - 1 + width);
+				}
+				if (checkBorder(pixels, currentPos - width, width, height)
+						&& pixels[currentPos - width] == black) {
+					stack.addFirst(currentPos - width);
+				}
+				if (checkBorder(pixels, currentPos - 1 - width, width, height)
+						&& pixels[currentPos - 1 - width] == black) {
+					stack.addFirst(currentPos - 1 - width);
+				}
+				if (checkBorder(pixels, currentPos + 1 - width, width, height)
+						&& pixels[currentPos + 1 - width] == black) {
+					stack.addFirst(currentPos + 1 - width);
+				}
+				if (checkBorder(pixels, currentPos - 1, width, height)
+						&& pixels[currentPos - 1] == black) {
+					stack.addFirst(currentPos - 1);
+				}
 
 				if (mStackSize < stack.size()) {
 					mStackSize = stack.size();
