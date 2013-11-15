@@ -1,5 +1,4 @@
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -9,13 +8,7 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import java.util.Random;
-import java.util.Stack;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -29,9 +22,8 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.plaf.SliderUI;
 
-public class Contour extends JPanel {
+public class ContourExercise extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 	private static final int border = 10;
@@ -49,7 +41,7 @@ public class Contour extends JPanel {
 
 	private LinkedList<Integer> stack = new LinkedList<Integer>();
 
-	public Contour() {
+	public ContourExercise() {
 		super(new BorderLayout(border, border));
 
 		// load the default image
@@ -61,7 +53,8 @@ public class Contour extends JPanel {
 
 		mImageView = new ImageView(mLoadedOriginalFile);
 		originalPixels = mImageView.getPixels().clone();
-		mImageView.setMaxSize(new Dimension(mImageView.getImgWidth(), mImageView.getImgHeight()));
+		mImageView.setMaxSize(new Dimension(mImageView.getImgWidth(),
+				mImageView.getImgHeight()));
 
 		// load image button
 		JButton load = new JButton("Bild šffnen");
@@ -74,7 +67,7 @@ public class Contour extends JPanel {
 					mImageView.setMaxSize(new Dimension(mImageView
 							.getImgWidth(), mImageView.getImgWidth()));
 					originalPixels = mImageView.getPixels().clone();
-					floodImage();
+					drawImage();
 				}
 			}
 		});
@@ -87,9 +80,13 @@ public class Contour extends JPanel {
 		methodList.setSelectedIndex(0); // set initial method
 		methodList.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				floodImage();
+				drawImage();
 			}
 		});
+
+		// hide unused controlls
+		methodText.setVisible(false);
+		methodList.setVisible(false);
 
 		// some status text
 		statusLine = new JLabel(" ");
@@ -123,7 +120,7 @@ public class Contour extends JPanel {
 				border));
 
 		// perform the initial flooding
-		floodImage();
+		drawImage();
 	}
 
 	private File mLoadedOriginalFile;
@@ -146,7 +143,7 @@ public class Contour extends JPanel {
 		frame = new JFrame(title + initalOpen);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		JComponent newContentPane = new Contour();
+		JComponent newContentPane = new ContourExercise();
 		newContentPane.setOpaque(true); // content panes must be opaque
 		frame.setContentPane(newContentPane);
 
@@ -171,10 +168,7 @@ public class Contour extends JPanel {
 
 	int originalPixels[];
 
-	float mb = 1024 * 1024;
-	Runtime runtime = Runtime.getRuntime();
-
-	protected void floodImage() {
+	protected void drawImage() {
 		if (originalPixels != null) {
 			mImageView.setPixels(originalPixels.clone());
 		}
@@ -190,20 +184,20 @@ public class Contour extends JPanel {
 		statusLine.setText(message);
 
 		int pixels[] = mImageView.getPixels().clone();
-		switch (methodList.getSelectedIndex()) {
-		case 0:
-			break;
-		default:
-			printMe("default ...");
-			break;
-		}
-
+		
+		findOuterContour(pixels);
+		
+		
 		mImageView.setPixels(pixels);
 		long time = System.currentTimeMillis() - startTime;
 
 		frame.pack();
 
 		statusLine.setText(message + " in " + time + " ms");
+	}
+
+	private void findOuterContour(int[] pixels) {
+		
 	}
 
 	private void printMe(String s) {

@@ -8,11 +8,15 @@ import java.awt.Font;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.io.File;
+import java.util.LinkedList;
 
 import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
+import javax.swing.text.ZoneView;
+
+import contour.Contour;
 
 /**
  * Edited version
@@ -216,22 +220,43 @@ public class ImageView extends JScrollPane {
 		return mZoom;
 	}
 
+	public Graphics getScrennGraphics() {
+		return screen.getGraphics();
+	}
+
+	public void addContour(Contour c) {
+		screen.addContour(c);
+		screen.revalidate();
+	}
+
 	class ImageScreen extends JComponent {
 
 		private static final long serialVersionUID = 1L;
 
 		private BufferedImage image;
 
+		LinkedList<Contour> contours = new LinkedList<Contour>();
+
 		public ImageScreen(BufferedImage bi) {
 			super();
 			image = bi;
+		}
+
+		public void addContour(Contour c) {
+			contours.add(c);
 		}
 
 		public void paintComponent(Graphics g) {
 			Rectangle r = this.getBounds();
 			if (image != null)
 				g.drawImage(image, 0, 0, r.width, r.height, this);
-			
+
+			if (!contours.isEmpty()) {
+				for (Contour c : contours) {
+					c.drawContour(g, mZoom);
+				}
+			}
+
 		}
 
 		public Dimension getPreferredSize() {
