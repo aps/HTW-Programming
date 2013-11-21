@@ -1,7 +1,9 @@
 package contour;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.LinkedList;
 
 public class Contour {
@@ -10,7 +12,7 @@ public class Contour {
 	public static final int TYPE_INNER = 1;
 
 	private LinkedList<ContourLine> contour;
-	private LinkedList<Coordinates> coorinates;
+	private LinkedList<Coordinates> coordinates;
 
 	int type = -1;
 
@@ -21,7 +23,7 @@ public class Contour {
 	 */
 	public Contour(int contourType) {
 		contour = new LinkedList<ContourLine>();
-		coorinates = new LinkedList<Contour.Coordinates>();
+		coordinates = new LinkedList<Contour.Coordinates>();
 
 		if (contourType != TYPE_INNER && contourType != TYPE_OUTER) {
 			throw new UnknownError("this contour type is not supported.");
@@ -39,28 +41,58 @@ public class Contour {
 	}
 
 	public void addCoorodinates(int u, int v) {
-		coorinates.add(new Coordinates(u, v));
+		coordinates.add(new Coordinates(u, v));
 	}
 
 	public void drawContour(Graphics g, double zoom) {
 		if (type == TYPE_INNER) {
-			g.setColor(Color.orange);
+			g.setColor(Color.ORANGE);
 		} else {
-			g.setColor(Color.red);
+			g.setColor(Color.RED);
 		}
+		Graphics2D g2 = (Graphics2D) g;
+		g2.setStroke(new BasicStroke(2));
 
 		for (ContourLine line : contour) {
-			g.drawLine((int) (line.from.x * zoom), (int) (line.from.y * zoom),
+			g2.drawLine((int) (line.from.x * zoom), (int) (line.from.y * zoom),
 					(int) (line.to.x * zoom), (int) (line.to.y * zoom));
 		}
 	}
 
 	public void printCoordinates(int height) {
-
-		for (Coordinates coord : coorinates) {
+		for (Coordinates coord : coordinates) {
 			System.out.print(" " + (coord.mU + (coord.mV * height)));
 		}
+	}
 
+	public void printCoordinates() {
+		for (Coordinates coord : coordinates) {
+			System.out.print(" (" + (coord.mU + ", " + coord.mV + ")"));
+		}
+	}
+
+	public void calculatePaths() {
+
+		for (Coordinates coord : coordinates) {
+			// is coordinate valid?
+			contour.addLast(calculateLine(coord));
+
+		}
+	}
+
+	private ContourLine calculateLine(Coordinates coord) {
+		if (type == TYPE_INNER) {
+			return getInnerLine(coord);
+		}
+		return getOuterLine(coord);
+	}
+
+	private ContourLine getInnerLine(Coordinates coord) {
+		return null;
+	}
+
+	private ContourLine getOuterLine(Coordinates coord) {
+		return null;
 	}
 
 	private class Coordinates {

@@ -25,7 +25,11 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import potrace.PotraceContour;
+
 import contour.Contour;
+import contour.ContourLine;
+import contour.ContourPoint;
 
 public class ContourExercise extends JPanel {
 
@@ -58,7 +62,7 @@ public class ContourExercise extends JPanel {
 		mImageView = new ImageView(mLoadedOriginalFile);
 		mImageView.setMinimumSize(new Dimension(maxWidth, maxHeight));
 		mOriginalPixels = mImageView.getPixels().clone();
-		mImageView.setMaxSize(new Dimension(maxWidth, maxHeight));
+		// mImageView.setMaxSize(new Dimension(maxWidth, maxHeight));
 		// mImageView.setMaxSize(new Dimension(mImageView.getImgWidth(),
 		// mImageView.getImgHeight()));
 
@@ -72,6 +76,7 @@ public class ContourExercise extends JPanel {
 					mImageView.loadImage(mLoadedOriginalFile);
 					mImageView.setMaxSize(new Dimension(mImageView
 							.getImgWidth(), mImageView.getImgWidth()));
+
 					mOriginalPixels = mImageView.getPixels().clone();
 					drawImage();
 				}
@@ -204,6 +209,8 @@ public class ContourExercise extends JPanel {
 		// }
 		// printMe(s);
 
+		LinkedList<PotraceContour> c = potrace(pixels, width, height);
+
 		LinkedHashSet<Contour> contours = combinedContourLabeling(pixels,
 				width, height);
 
@@ -211,8 +218,10 @@ public class ContourExercise extends JPanel {
 
 			for (Iterator iterator = contours.iterator(); iterator.hasNext();) {
 				Contour contour = (Contour) iterator.next();
-				contour.printCoordinates(height);
+				printMe("lalal");
+				contour.printCoordinates();
 				printMe("");
+				mImageView.addContour(contour);
 			}
 
 		}
@@ -223,6 +232,86 @@ public class ContourExercise extends JPanel {
 		frame.pack();
 
 		statusLine.setText(message + " in " + time + " ms");
+	}
+
+	private LinkedList<PotraceContour> potrace(int[] pixels, int width,
+			int height) {
+		int[] newPixels = pixels.clone();
+
+		PotraceContour potrace = new PotraceContour();
+		potrace.setType(PotraceContour.TYPE_OUTER);
+
+		int start = 0;
+		ContourPoint startPoint;
+		ContourPoint secondPoint;
+
+		while (pixels[start] != forground) {
+			start++;
+		}
+
+		startPoint = new ContourPoint(getU(start, width), getV(start, width));
+		secondPoint = new ContourPoint(startPoint.x, startPoint.y + 1);
+		LinkedList<ContourLine> contour = new LinkedList<ContourLine>();
+		contour.add(new ContourLine(startPoint, secondPoint));
+
+		ContourLine currentLine = contour.get(0);
+
+		printMe(currentLine.toString());
+
+		while ((contour.size() < 4 || contour.get(0).equals(currentLine))) {
+			currentLine = findNextLine(currentLine, pixels, width, height);
+			contour.addLast(currentLine);
+		}
+
+		potrace.addLines(contour);
+
+		potrace.printCoordinates();
+
+		LinkedList<PotraceContour> contours = new LinkedList<PotraceContour>();
+		contours.add(potrace);
+
+		return contours;
+	}
+
+	private ContourLine findNextLine(ContourLine currentLine, int[] pixels,
+			int width, int height) {
+
+		boolean left = false, right = false;
+		if (isForground(currentLine.to.x - 1, currentLine.to.y + 1, pixels,
+				width, height)) {
+			left = true;
+		}
+		if (isForground(currentLine.to.x, currentLine.to.y + 1, pixels, width,
+				height)) {
+			right = true;
+		}
+
+		if (!left && !right) {
+			return new ContourLine(currentLine.to, new ContourPoint(
+					currentLine.to.x + 1, currentLine.to.y));
+		} else if (!left && right) {
+			return new ContourLine(currentLine.to, new ContourPoint(
+					currentLine.to.x, currentLine.to.y + 1));
+		} else {
+			// left && not right || left && right
+			return new ContourLine(currentLine.to, new ContourPoint(
+					currentLine.to.x - 1, currentLine.to.y));
+		}
+
+	}
+
+	private boolean isForground(int x, int y, int[] pixels, int width,
+			int height) {
+
+		int u = getU(x, width);
+		int v = getV(y, width);
+
+		if (u > -1 && u < width && v > -1 && v < height
+				&& pixels[I(u, v, width)] == forground) {
+			return true;
+		}
+
+		return false;
 	}
 
 	final int forground = 0xff000000;
@@ -282,8 +371,8 @@ public class ContourExercise extends JPanel {
 	private Contour traceContour(int start, int type, int currentLabel,
 			int[] originalPixels, int[] newPixels, int width, int height) {
 
-		printMe("traceContour: " + start + " type=" + type + " label: "
-				+ currentLabel);
+		// printMe("traceContour: " + start + " type=" + type + " label: "
+		// + currentLabel);
 
 		Contour contour = new Contour(type);
 		int[] currentNode = findNextNode(start, type, originalPixels,
@@ -297,7 +386,7 @@ public class ContourExercise extends JPanel {
 		contour.addCoorodinates(getU(currentPosition, width),
 				getV(currentPosition, width));
 
-		printMe("xT: " + xT + " start: " + start);
+		// printMe("xT: " + xT + " start: " + start);
 
 		boolean done = (previousPosition == currentPosition);
 		int counter = 0;
@@ -425,7 +514,6 @@ public class ContourExercise extends JPanel {
 	}
 
 	private int getV(int position, int width) {
-
 		return position / width;
 	}
 

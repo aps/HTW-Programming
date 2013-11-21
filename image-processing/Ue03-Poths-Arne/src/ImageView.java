@@ -32,7 +32,7 @@ public class ImageView extends JScrollPane {
 	Dimension maxSize;
 	int borderX = -1;
 	int borderY = -1;
-	double mZoom = 1.0d;
+	double mZoom = 2.0d;
 
 	int pixels[] = null; // pixel array in ARGB format
 
@@ -260,11 +260,11 @@ public class ImageView extends JScrollPane {
 		}
 
 		public Dimension getPreferredSize() {
-			if (image != null)
+			if (image != null) {
 				return new Dimension((int) (mZoom * image.getWidth()),
 						(int) (mZoom * image.getHeight()));
-			else
-				return new Dimension(100, 60);
+			} else
+				return new Dimension(800, 600);
 		}
 	}
 
