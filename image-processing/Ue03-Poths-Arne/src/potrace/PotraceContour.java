@@ -1,7 +1,9 @@
 package potrace;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.LinkedList;
 import java.util.Vector;
 
@@ -60,6 +62,12 @@ public class PotraceContour {
 		} else {
 			g.setColor(Color.RED);
 		}
+
+		Graphics2D g2 = (Graphics2D) g;
+		if (zoom > 5)
+			g2.setStroke(new BasicStroke(2));
+		else
+			g2.setStroke(new BasicStroke(1));
 
 		for (ContourLine line : contour) {
 			g.drawLine(Math.round(line.from.x * zoom),

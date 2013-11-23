@@ -1,5 +1,6 @@
 // Copyright (C) 2008 by Klaus Jung
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -211,9 +212,6 @@ public class ImageView extends JScrollPane {
 	}
 
 	public void setZoom(float zoom) {
-		if (zoom < 1) {
-			zoom = 1.0f;
-		}
 		mZoom = zoom;
 		screen.revalidate();
 	}
@@ -263,12 +261,33 @@ public class ImageView extends JScrollPane {
 			if (image != null)
 				g.drawImage(image, 0, 0, r.width, r.height, this);
 
+			if (mZoom > 5.0f) {
+				drawPixels(g, mZoom, image.getWidth(), image.getHeight());
+			}
+
 			if (!contours.isEmpty()) {
 				for (PotraceContour c : contours) {
 					c.drawContour(g, mZoom);
 				}
 			}
 
+		}
+
+		private void drawPixels(Graphics g, float zoom, int width, int height) {
+			Graphics2D g2 = (Graphics2D) g;
+
+			g2.setColor(Color.LIGHT_GRAY);
+
+			int posX;
+			int posY;
+			for (int w = 1; w < width; w++) {
+				posX = Math.round(zoom * w);
+				g2.drawLine(posX, 0, posX, Math.round(zoom * (height)));
+			}
+			for (int h = 1; h < height; h++) {
+				posY = Math.round(zoom * h);
+				g2.drawLine(0, posY, Math.round(zoom * (width - 1)), posY);
+			}
 		}
 
 		@Override

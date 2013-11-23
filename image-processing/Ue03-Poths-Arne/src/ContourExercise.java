@@ -97,7 +97,7 @@ public class ContourExercise extends JPanel {
 		controls.add(methodText, c);
 		controls.add(methodList, c);
 
-		JSlider zoomSlider = new JSlider(100, 1000, 200);
+		JSlider zoomSlider = new JSlider(110, 1000, 200);
 		zoomSlider.addChangeListener(new ChangeListener() {
 
 			@Override
