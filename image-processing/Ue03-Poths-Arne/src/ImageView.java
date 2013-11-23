@@ -8,6 +8,7 @@ import java.awt.Font;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.io.File;
+import java.util.Collection;
 import java.util.LinkedList;
 
 import javax.imageio.ImageIO;
@@ -15,6 +16,8 @@ import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.text.ZoneView;
+
+import potrace.PotraceContour;
 
 import contour.Contour;
 
@@ -32,7 +35,7 @@ public class ImageView extends JScrollPane {
 	Dimension maxSize;
 	int borderX = -1;
 	int borderY = -1;
-	double mZoom = 2.0d;
+	float mZoom = 2.0f;
 
 	int pixels[] = null; // pixel array in ARGB format
 
@@ -156,7 +159,7 @@ public class ImageView extends JScrollPane {
 			JOptionPane.showMessageDialog(this,
 					"Bild konnte nicht geladen werden.", "Fehler",
 					JOptionPane.ERROR_MESSAGE);
-			bi = new BufferedImage(200, 150, BufferedImage.TYPE_INT_ARGB);
+			bi = new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB);
 		}
 
 		// MediaTracker tracker = new MediaTracker(this);
@@ -211,7 +214,7 @@ public class ImageView extends JScrollPane {
 					getImgWidth());
 	}
 
-	public void setZoom(double zoom) {
+	public void setZoom(float zoom) {
 		mZoom = zoom;
 		screen.revalidate();
 	}
@@ -224,8 +227,13 @@ public class ImageView extends JScrollPane {
 		return screen.getGraphics();
 	}
 
-	public void addContour(Contour c) {
+	public void addContour(PotraceContour c) {
 		screen.addContour(c);
+		screen.revalidate();
+	}
+
+	public void addAllContour(Collection<PotraceContour> c) {
+		screen.addAllContour(c);
 		screen.revalidate();
 	}
 
@@ -235,15 +243,19 @@ public class ImageView extends JScrollPane {
 
 		private BufferedImage image;
 
-		LinkedList<Contour> contours = new LinkedList<Contour>();
+		LinkedList<PotraceContour> contours = new LinkedList<PotraceContour>();
 
 		public ImageScreen(BufferedImage bi) {
 			super();
 			image = bi;
 		}
 
-		public void addContour(Contour c) {
+		public void addContour(PotraceContour c) {
 			contours.add(c);
+		}
+
+		public void addAllContour(Collection<PotraceContour> all) {
+			contours.addAll(all);
 		}
 
 		public void paintComponent(Graphics g) {
@@ -252,7 +264,7 @@ public class ImageView extends JScrollPane {
 				g.drawImage(image, 0, 0, r.width, r.height, this);
 
 			if (!contours.isEmpty()) {
-				for (Contour c : contours) {
+				for (PotraceContour c : contours) {
 					c.drawContour(g, mZoom);
 				}
 			}

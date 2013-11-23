@@ -1,6 +1,9 @@
 package potrace;
 
+import java.awt.Color;
+import java.awt.Graphics;
 import java.util.LinkedList;
+import java.util.Vector;
 
 import contour.ContourLine;
 import contour.ContourPoint;
@@ -38,15 +41,34 @@ public class PotraceContour {
 		contour.addAll(lines);
 	}
 
+	public void addLines(Vector<ContourLine> lines) {
+		contour.addAll(lines);
+	}
+
+	public boolean contains(ContourLine obj) {
+		return contour.contains(obj);
+	}
+
 	public void printCoordinates() {
-
-		System.out.println("Coords");
+		System.out.println("contour: ");
 		for (ContourLine line : contour) {
-			System.out.print(" " + line.from);
+			System.out.print(" " + line.toString());
 		}
-		System.out.println("");
-		System.out.println("----");
+		System.out.println("--------");
+	}
 
+	public void drawContour(Graphics g, float zoom) {
+		if (type == TYPE_INNER) {
+			g.setColor(Color.ORANGE);
+		} else {
+			g.setColor(Color.RED);
+		}
+
+		for (ContourLine line : contour) {
+			g.drawLine(Math.round(line.from.x * zoom),
+					(int) (line.from.y * zoom), (int) (line.to.x * zoom),
+					(int) (line.to.y * zoom));
+		}
 	}
 
 }

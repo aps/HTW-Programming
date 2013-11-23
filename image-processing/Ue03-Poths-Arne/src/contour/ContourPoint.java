@@ -27,4 +27,17 @@ public class ContourPoint {
 		return "(" + x + ", " + y + ")";
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof ContourPoint) {
+			ContourPoint point = (ContourPoint) obj;
+			if (point.x == x && point.y == y) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		return super.equals(obj);
+	}
 }

@@ -22,7 +22,6 @@ public class ContourLine implements Comparable<ContourLine> {
 		if (o.from == this.from && o.to == this.to) {
 			return 0;
 		}
-
 		return 1;
 	}
 
@@ -31,4 +30,13 @@ public class ContourLine implements Comparable<ContourLine> {
 		return "from[" + from + "] Ð to[" + to + "]";
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof ContourLine) {
+			ContourLine line = (ContourLine) obj;
+			return (line.from.equals(this.from) && line.to.equals(this.to));
+		}
+
+		return super.equals(obj);
+	}
 }
