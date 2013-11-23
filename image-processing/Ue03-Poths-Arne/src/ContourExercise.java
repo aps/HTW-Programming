@@ -8,9 +8,6 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -26,11 +23,6 @@ import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import potrace.Potrace;
-import potrace.PotraceContour;
-
-import contour.Contour;
-import contour.ContourLine;
-import contour.ContourPoint;
 
 public class ContourExercise extends JPanel {
 
@@ -48,8 +40,6 @@ public class ContourExercise extends JPanel {
 	private JComboBox methodList; // select the flood filling method
 	private JLabel statusLine; // to print some status text
 
-	private LinkedList<Integer> stack = new LinkedList<Integer>();
-
 	public ContourExercise() {
 		super(new BorderLayout(border, border));
 
@@ -61,11 +51,8 @@ public class ContourExercise extends JPanel {
 												// image
 
 		mImageView = new ImageView(mLoadedOriginalFile);
-		mImageView.setMinimumSize(new Dimension(maxWidth, maxHeight));
 		mOriginalPixels = mImageView.getPixels().clone();
-		// mImageView.setMaxSize(new Dimension(maxWidth, maxHeight));
-		// mImageView.setMaxSize(new Dimension(mImageView.getImgWidth(),
-		// mImageView.getImgHeight()));
+		mImageView.setMaxSize(new Dimension(maxWidth, maxHeight));
 
 		// load image button
 		JButton load = new JButton("Bild šffnen");
@@ -75,8 +62,7 @@ public class ContourExercise extends JPanel {
 				mLoadedOriginalFile = openFile();
 				if (mLoadedOriginalFile != null) {
 					mImageView.loadImage(mLoadedOriginalFile);
-					mImageView.setMaxSize(new Dimension(mImageView
-							.getImgWidth(), mImageView.getImgWidth()));
+					mImageView.setMaxSize(new Dimension(maxWidth, maxHeight));
 
 					mOriginalPixels = mImageView.getPixels().clone();
 					drawImage();
@@ -111,12 +97,12 @@ public class ContourExercise extends JPanel {
 		controls.add(methodText, c);
 		controls.add(methodList, c);
 
-		JSlider zoomSlider = new JSlider(0, 1000, 100);
+		JSlider zoomSlider = new JSlider(100, 1000, 200);
 		zoomSlider.addChangeListener(new ChangeListener() {
 
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				mImageView.setZoom(((JSlider) e.getSource()).getValue() / 100.0f);
+				mImageView.setZoom(((JSlider) e.getSource()).getValue() / 100f);
 			}
 		});
 		controls.add(zoomSlider);
@@ -197,41 +183,12 @@ public class ContourExercise extends JPanel {
 
 		int pixels[] = mImageView.getPixels().clone();
 
-		// int color = 0;
-		// String s = "";
-		// for (int i = 0; i < pixels.length; i++) {
-		// color = pixels[i] == forground ? 1 : 0;
-		// System.out.print("," + color);
-		// s += "," + i;
-		// if ((i + 1) % width == 0) {
-		// printMe("");
-		// s += "\n";
-		// }
-		// }
-		// printMe(s);
-
+		// start potrace
 		Potrace potrace = new Potrace(pixels, width, height);
 		potrace.go();
 
-		// LinkedList<PotraceContour> c = potraceNew(pixels, width, height);
-
-		// LinkedHashSet<Contour> contours = combinedContourLabeling(pixels,
-		// width, height);
-		//
-		// if (contours != null && !contours.isEmpty()) {
-		//
-		// for (Iterator iterator = contours.iterator(); iterator.hasNext();) {
-		// Contour contour = (Contour) iterator.next();
-		// printMe("lalal");
-		// contour.printCoordinates();
-		// printMe("");
-		// mImageView.addContour(contour);
-		// }
-		//
-		// }
-
-		mImageView.addAllContour(potrace.getAll());
 		mImageView.setPixels(pixels);
+		mImageView.addAllContour(potrace.getAll());
 		long time = System.currentTimeMillis() - startTime;
 
 		frame.pack();
@@ -239,539 +196,4 @@ public class ContourExercise extends JPanel {
 		statusLine.setText(message + " in " + time + " ms");
 	}
 
-	private LinkedList<PotraceContour> potraceNew(int[] pixels, int width,
-			int height) {
-		LinkedList<PotraceContour> contours = new LinkedList<PotraceContour>();
-		int start = 0;
-
-		while (start < pixels.length) {
-
-			if (((start - 1) / width) == (start / width)) {
-
-				if (pixels[start] == forground
-						&& pixels[start - 1] == background
-						&& !inCurrentContours(contours, start, width)) {
-					// traceContour
-					contours.addAll(tracePotrace(start, pixels.clone(), width,
-							height));
-				}
-
-			}
-			start++;
-		}
-
-		return contours;
-	}
-
-	private LinkedList<PotraceContour> tracePotrace(int start, int[] pixels,
-			int width, int height) {
-
-		LinkedList<PotraceContour> res = new LinkedList<PotraceContour>();
-
-		// trace outer contour
-		ContourPoint startPoint;
-		ContourPoint secondPoint;
-
-		startPoint = new ContourPoint(getU(start, width), getV(start, width));
-		secondPoint = new ContourPoint(startPoint.x, startPoint.y + 1);
-		LinkedList<ContourLine> contour = new LinkedList<ContourLine>();
-		contour.add(new ContourLine(startPoint, secondPoint));
-
-		ContourLine currentLine = contour.get(0);
-
-		// printMe(currentLine.toString());
-		boolean done = false;
-		int counter = 0;
-		while (!done && counter < 100) {
-			currentLine = findNextLine(currentLine, pixels, width, height);
-			contour.addLast(currentLine);
-
-			done = contour.get(0).equals(currentLine);
-
-			counter++;
-		}
-
-		PotraceContour potrace = new PotraceContour();
-		potrace.addLines(contour);
-		res.add(potrace);
-
-		potrace.printCoordinates();
-
-		// trace inner contour
-
-		return res;
-	}
-
-	private boolean inCurrentContours(LinkedList<PotraceContour> contours,
-			int start, int width) {
-		int u = getU(start, width);
-		int v = getV(start, width);
-
-		// printMe("start: " + start + " u: " + u + " v: " + v);
-
-		for (PotraceContour cont : contours) {
-			if (cont.contains(new ContourLine(new ContourPoint(u, v),
-					new ContourPoint(u, v + 1)))) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	private LinkedList<PotraceContour> potrace(int[] pixels, int width,
-			int height) {
-		int[] newPixels = pixels.clone();
-
-		PotraceContour potrace = new PotraceContour();
-		potrace.setType(PotraceContour.TYPE_OUTER);
-
-		int start = 0;
-		ContourPoint startPoint;
-		ContourPoint secondPoint;
-
-		while (pixels[start] != forground) {
-			start++;
-
-		}
-
-		startPoint = new ContourPoint(getU(start, width), getV(start, width));
-		secondPoint = new ContourPoint(startPoint.x, startPoint.y + 1);
-		LinkedList<ContourLine> contour = new LinkedList<ContourLine>();
-		contour.add(new ContourLine(startPoint, secondPoint));
-
-		ContourLine currentLine = contour.get(0);
-
-		// printMe(currentLine.toString());
-
-		while ((contour.size() < 4 || contour.get(0).equals(currentLine))) {
-			currentLine = findNextLine(currentLine, pixels, width, height);
-			contour.addLast(currentLine);
-		}
-
-		potrace.addLines(contour);
-
-		potrace.printCoordinates();
-
-		LinkedList<PotraceContour> contours = new LinkedList<PotraceContour>();
-		contours.add(potrace);
-
-		return contours;
-	}
-
-	/**
-	 * find the next line, depending on the direction where it comes from
-	 * 
-	 * @param currentLine
-	 * @param pixels
-	 * @param width
-	 * @param height
-	 * @return
-	 */
-	private ContourLine findNextLine(ContourLine currentLine, int[] pixels,
-			int width, int height) {
-
-		int xDiff = currentLine.from.x - currentLine.to.x;
-		int yDiff = currentLine.from.y - currentLine.to.y;
-
-		int direction = getDirection(currentLine);
-
-		System.out.print("xDiff : " + xDiff + " yDiff: " + yDiff);
-
-		// I(currentLine.to.x, currentLine.to.y, width)
-		printMe(" (" + currentLine.to.x + ", " + currentLine.to.y + ") "
-				+ I(currentLine.from.x, currentLine.from.y, width));
-
-		if (direction == FROM_LEFT) {
-			// direction: right
-			return findNextLineLeft(currentLine, pixels, width, height);
-		} else if (direction == FROM_RIGHT) {
-			// direction: left
-			return findNextLineRight(currentLine, pixels, width, height);
-		} else if (direction == FROM_BOTTOM) {
-			// direction: down
-			return findNextLineDown(currentLine, pixels, width, height);
-		} else if (direction == FROM_TOP) {
-			// direction: up
-			return findNextLineUp(currentLine, pixels, width, height);
-		} else {
-			printMe("failure happens ... ");
-			return null;
-		}
-
-	}
-
-	public static final int FROM_LEFT = 0;
-	public static final int FROM_TOP = 1;
-	public static final int FROM_RIGHT = 2;
-	public static final int FROM_BOTTOM = 3;
-
-	/**
-	 * 
-	 * @param currentLine
-	 * @return
-	 */
-	private int getDirection(ContourLine currentLine) {
-		int xDiff = currentLine.from.x - currentLine.to.x;
-		int yDiff = currentLine.from.y - currentLine.to.y;
-
-		if (xDiff == -1 && yDiff == 0) {
-			return FROM_LEFT;
-		} else if (xDiff == 0 && yDiff == -1) {
-			return FROM_TOP;
-		} else if (xDiff == 1 && yDiff == 0) {
-			return FROM_RIGHT;
-		} else if (xDiff == 0 && yDiff == 1) {
-			return FROM_BOTTOM;
-		} else {
-			return -1;
-		}
-
-	}
-
-	private ContourLine findNextLineUp(ContourLine currentLine, int[] pixels,
-			int width, int height) {
-		boolean left = false, right = false;
-		if (isForground(currentLine.to.x - 1, currentLine.to.y - 1, pixels,
-				width, height)) {
-			left = true;
-		}
-		if (isForground(currentLine.to.x, currentLine.to.y - 1, pixels, width,
-				height)) {
-			right = true;
-		}
-
-		if (!left && !right) {
-			return new ContourLine(currentLine.to, new ContourPoint(
-					currentLine.to.x - 1, currentLine.to.y));
-		} else if (left && !right) {
-			return new ContourLine(currentLine.to, new ContourPoint(
-					currentLine.to.x, currentLine.to.y - 1));
-		} else {
-			// left && not right || left && right
-			return new ContourLine(currentLine.to, new ContourPoint(
-					currentLine.to.x + 1, currentLine.to.y));
-		}
-	}
-
-	private ContourLine findNextLineRight(ContourLine currentLine,
-			int[] pixels, int width, int height) {
-
-		boolean left = false, right = false;
-		if (isForground(currentLine.to.x - 1, currentLine.to.y, pixels, width,
-				height)) {
-			left = true;
-		}
-		if (isForground(currentLine.to.x - 1, currentLine.to.y - 1, pixels,
-				width, height)) {
-			right = true;
-		}
-
-		if (!left && !right) {
-			return new ContourLine(currentLine.to, new ContourPoint(
-					currentLine.to.x, currentLine.to.y + 1));
-		} else if (left && !right) {
-			return new ContourLine(currentLine.to, new ContourPoint(
-					currentLine.to.x - 1, currentLine.to.y));
-		} else {
-			// left && not right || left && right
-			return new ContourLine(currentLine.to, new ContourPoint(
-					currentLine.to.x, currentLine.to.y - 1));
-		}
-	}
-
-	private ContourLine findNextLineLeft(ContourLine currentLine, int[] pixels,
-			int width, int height) {
-
-		boolean left = false, right = false;
-		if (isForground(currentLine.to.x, currentLine.to.y, pixels, width,
-				height)) {
-			left = true;
-		}
-		if (isForground(currentLine.to.x, currentLine.to.y + 1, pixels, width,
-				height)) {
-			right = true;
-		}
-
-		if (!left && !right) {
-			return new ContourLine(currentLine.to, new ContourPoint(
-					currentLine.to.x, currentLine.to.y - 1));
-		} else if (left && !right) {
-			return new ContourLine(currentLine.to, new ContourPoint(
-					currentLine.to.x + 1, currentLine.to.y));
-		} else {
-			// left && not right || left && right
-			return new ContourLine(currentLine.to, new ContourPoint(
-					currentLine.to.x, currentLine.to.y + 1));
-		}
-	}
-
-	private ContourLine findNextLineDown(ContourLine currentLine, int[] pixels,
-			int width, int height) {
-		boolean left = false, right = false;
-		if (isForground(currentLine.to.x, currentLine.to.y, pixels, width,
-				height)) {
-			left = true;
-		}
-		if (isForground(currentLine.to.x - 1, currentLine.to.y, pixels, width,
-				height)) {
-			right = true;
-		}
-
-		if (!left && !right) {
-			return new ContourLine(currentLine.to, new ContourPoint(
-					currentLine.to.x + 1, currentLine.to.y));
-		} else if (left && !right) {
-			return new ContourLine(currentLine.to, new ContourPoint(
-					currentLine.to.x, currentLine.to.y + 1));
-		} else {
-			// left && not right || left && right
-			return new ContourLine(currentLine.to, new ContourPoint(
-					currentLine.to.x - 1, currentLine.to.y));
-		}
-	}
-
-	private boolean isForground(int x, int y, int[] pixels, int width,
-			int height) {
-
-		if (x > -1 && x < width && y > -1 && y < height) {
-			printMe("isForground: x=" + x + ",y=" + y
-					+ " pixels[I(x, y, width)]="
-					+ (pixels[I(x, y, width)] == forground ? "black" : "white"));
-		}
-
-		if (x > -1 && x < width && y > -1 && y < height
-				&& pixels[I(x, y, width)] == forground) {
-			return true;
-		}
-
-		return false;
-	}
-
-	final int forground = 0xff000000;
-	final int background = 0xffffffff;
-
-	private LinkedHashSet<Contour> combinedContourLabeling(
-			int[] originalPixels, int width, int height) {
-		int[] picture = new int[originalPixels.length]; // the pixel to work on
-
-		LinkedHashSet<Contour> contours = new LinkedHashSet<Contour>();
-
-		for (int i = 0; i < originalPixels.length; i++) {
-			picture[i] = 0;
-		}
-
-		int regionCounter = 0;
-		int currentLabel = 0;
-		int contourStart = 0;
-		Contour contour = null;
-
-		for (int v = 0; v < height; v++) {
-			currentLabel = 0;
-			for (int u = 0; u < width; u++) {
-				if (originalPixels[I(u, v, width)] == forground) {
-					if (currentLabel != 0) {
-						picture[I(u, v, width)] = currentLabel;
-					} else {
-						currentLabel = picture[I(u, v, width)];
-
-						if (currentLabel == 0) {
-							currentLabel = ++regionCounter;
-							contourStart = I(u, v, width);
-							contour = traceContour(contourStart, 0,
-									currentLabel, originalPixels, picture,
-									width, height);
-							contours.add(contour);
-							picture[I(u, v, width)] = currentLabel;
-						}
-					} // end else
-
-				} // end if foreground
-					// if current pixel is a forground pixel
-				else if (currentLabel != 0) {
-					if (picture[I(u, v, width)] == 0) {
-						contourStart = I(u - 1, v, width);
-						contour = traceContour(contourStart, 1, currentLabel,
-								originalPixels, picture, width, height);
-						contours.add(contour);
-					}
-					currentLabel = 0;
-				} // end else
-			} // end u-for
-		} // end v-for
-		return contours;
-	}
-
-	private Contour traceContour(int start, int type, int currentLabel,
-			int[] originalPixels, int[] newPixels, int width, int height) {
-
-		Contour contour = new Contour(type);
-		int[] currentNode = findNextNode(start, type, originalPixels,
-				newPixels, width, height);
-		int d = currentNode[1];
-		int xT = currentNode[0];
-		int previousPosition = start;
-		int currentPosition = currentNode[0];
-
-		// add the current position to the contour
-		contour.addCoorodinates(getU(currentPosition, width),
-				getV(currentPosition, width));
-
-		boolean done = (previousPosition == currentPosition);
-		int counter = 0;
-		while (!done) {
-			newPixels[currentPosition] = currentLabel;
-			currentNode = findNextNode(currentPosition, (d + 6) % 8,
-					originalPixels, newPixels, width, height);
-			previousPosition = currentPosition;
-			currentPosition = currentNode[0];
-			d = currentNode[1];
-			done = (previousPosition == start && currentPosition == xT);
-
-			if (!done) {
-				contour.addCoorodinates(getU(currentPosition, width),
-						getV(currentPosition, width));
-			}
-
-			counter++;
-		}
-
-		return contour;
-	}
-
-	private int[] findNextNode(int start, int d, int[] originalPixels,
-			int[] newPixels, int width, int height) {
-
-		int currentPosition = start;
-
-		// printMe("pos: " + currentPosition + " start: " + start + " d: " +
-		// d);
-		// printMe("i=" + i + " pos: " + currentPosition + " start: "
-		// + start + " d: " + d);
-
-		for (int i = 0; i <= 6; i++) {
-			currentPosition = nextPosition(start, d, width, height);
-			if (currentPosition != -1) {
-
-				if (originalPixels[currentPosition] == background) {
-					newPixels[currentPosition] = -1;
-					d = (d + 1) % 8;
-				} else {
-					// printMe("returning: " + currentPosition + " d=" + d);
-					return new int[] { currentPosition, d };
-				}
-			} // end if currentPos
-			else {
-				d = (d + 1) % 8;
-			}
-		} // end for
-
-		return new int[] { start, d };
-	}
-
-	private int nextPosition(int position, int d, int width, int height) {
-
-		int u = getU(position, width);
-		int v = getV(position, width);
-
-		switch (d) {
-		case 0:
-			if (++u < width) {
-				return I(u, v, width);
-			}
-			break;
-		case 7:
-			if (++u < width && --v > -1) {
-				return I(u, v, width);
-			}
-			break;
-		case 6:
-			if (--v > -1) {
-				return I(u, v, width);
-			}
-			break;
-		case 5:
-			if (--u > -1 && --v > -1) {
-				return I(u, v, width);
-			}
-			break;
-		case 4:
-			if (--u > -1) {
-				return I(u, v, width);
-			}
-			break;
-		case 3:
-			if (--u > -1 && ++v < height) {
-				return I(u, v, width);
-			}
-			break;
-		case 2:
-			if (++v < height) {
-				return I(u, v, width);
-			}
-			break;
-		case 1:
-			if (++u < width && ++v < height) {
-				return I(u, v, width);
-			}
-			break;
-		}
-
-		return -1;
-	}
-
-	/**
-	 * calculate the pixel position
-	 * 
-	 * @param u
-	 * @param v
-	 * @param width
-	 * @return
-	 */
-	private int I(int u, int v, int width) {
-		return u + (v * width);
-	}
-
-	private int getU(int position, int width) {
-		return position % width;
-	}
-
-	private int getV(int position, int width) {
-		return position / width;
-	}
-
-	public boolean valid(int[] pixels, int pos, int width, int height) {
-		// --- generell boarders
-
-		if (pos == 0) { // is first pos
-			return false;
-		}
-
-		if (pos + 1 == pixels.length) { // last pos
-			return false;
-		}
-
-		if (pos + width > pixels.length) { // check position for next row
-			return false;
-		}
-
-		if (pos - width < 0) { // check position for prev row
-			return false;
-		}
-
-		// --- row specific boarders
-		int row = pos / width;
-
-		if (row != ((pos - 1) / width)) {
-			return false;
-		}
-		if (row != ((pos + 1) / width)) {
-			return false;
-		}
-
-		return true;
-	}
-
-	private void printMe(String s) {
-		System.out.println(s);
-	}
 }

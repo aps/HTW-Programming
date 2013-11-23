@@ -5,9 +5,6 @@ import java.awt.Graphics;
 import java.util.LinkedList;
 import java.util.Vector;
 
-import contour.ContourLine;
-import contour.ContourPoint;
-
 public class PotraceContour {
 
 	LinkedList<ContourLine> contour;
@@ -66,8 +63,8 @@ public class PotraceContour {
 
 		for (ContourLine line : contour) {
 			g.drawLine(Math.round(line.from.x * zoom),
-					(int) (line.from.y * zoom), (int) (line.to.x * zoom),
-					(int) (line.to.y * zoom));
+					Math.round(line.from.y * zoom),
+					Math.round(line.to.x * zoom), Math.round(line.to.y * zoom));
 		}
 	}
 

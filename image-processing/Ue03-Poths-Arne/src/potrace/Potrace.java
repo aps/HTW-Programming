@@ -2,9 +2,6 @@ package potrace;
 
 import java.util.Vector;
 
-import contour.ContourLine;
-import contour.ContourPoint;
-
 public class Potrace {
 
 	final boolean DEBUG = false;

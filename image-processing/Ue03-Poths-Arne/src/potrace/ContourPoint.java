@@ -1,4 +1,4 @@
-package contour;
+package potrace;
 
 /**
  * 

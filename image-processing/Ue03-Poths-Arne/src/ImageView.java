@@ -1,12 +1,12 @@
 // Copyright (C) 2008 by Klaus Jung
 
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
-import java.awt.Font;
-import java.awt.Color;
-import java.awt.Graphics2D;
 import java.io.File;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -15,11 +15,8 @@ import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
-import javax.swing.text.ZoneView;
 
 import potrace.PotraceContour;
-
-import contour.Contour;
 
 /**
  * Edited version
@@ -43,7 +40,6 @@ public class ImageView extends JScrollPane {
 		// construct empty image of given size
 		BufferedImage bi = new BufferedImage(width, height,
 				BufferedImage.TYPE_INT_ARGB);
-
 		init(bi, true);
 	}
 
@@ -215,11 +211,14 @@ public class ImageView extends JScrollPane {
 	}
 
 	public void setZoom(float zoom) {
+		if (zoom < 1) {
+			zoom = 1.0f;
+		}
 		mZoom = zoom;
 		screen.revalidate();
 	}
 
-	public double getZoom() {
+	public float getZoom() {
 		return mZoom;
 	}
 
@@ -258,6 +257,7 @@ public class ImageView extends JScrollPane {
 			contours.addAll(all);
 		}
 
+		@Override
 		public void paintComponent(Graphics g) {
 			Rectangle r = this.getBounds();
 			if (image != null)
@@ -271,6 +271,7 @@ public class ImageView extends JScrollPane {
 
 		}
 
+		@Override
 		public Dimension getPreferredSize() {
 			if (image != null) {
 				return new Dimension((int) (mZoom * image.getWidth()),
