@@ -1,5 +1,6 @@
 package potrace;
 
+import java.awt.Graphics;
 import java.util.Vector;
 
 public class Potrace {
@@ -16,6 +17,7 @@ public class Potrace {
 	int height;
 
 	Vector<PotraceContour> mContours = new Vector<PotraceContour>(2, 2);
+	Vector<Path> mPath = new Vector<Path>(10, 2);
 
 	public Potrace(int[] pixels, int width, int height) {
 		this.pixels = pixels.clone();
@@ -24,11 +26,49 @@ public class Potrace {
 	}
 
 	public void go() {
+		findContours();
+		// for (PotraceContour contour : mContours) {
+		// findStraithPaths(contour);
+		// }
+		
+	}
+
+	private void findStraithPaths(PotraceContour currentContour) {
+
+		Vector<Path> pathes = new Vector<Path>();
+		int pos = 1;
+
+		Edge start = currentContour.get(0);
+		Path p;
+		do {
+			p = findMaxPath(start, currentContour, pos);
+			mPath.add(p);
+
+			start = currentContour.getByStart(mPath.get(mPath.size() - 1)
+					.getLast());
+
+			pos = currentContour.getNewStartPosition();
+		} while (mPath.size() < 2
+				|| !mPath.get(mPath.size() - 1).contains(mPath.get(0).get(0)));
+	}
+
+	private Path findMaxPath(Edge start, PotraceContour currentContour, int pos) {
+		D.ln("findMAx: " + start + " pos= " + pos);
+		Path p = new Path(start);
+		while (pos < currentContour.size() && p.add(currentContour.get(pos))) {
+			pos++;
+
+		}
+		return p;
+	}
+
+	private void findContours() {
+
 		int startPosition;
-		ContourPoint startPoint;
-		ContourLine start;
-		Vector<ContourLine> lines;
-		ContourLine currentLine;
+		Vertex startPoint;
+		Edge start;
+		Vector<Edge> lines;
+		Edge currentLine;
 		PotraceContour contour;
 
 		int[] currentPixels = pixels.clone();
@@ -38,14 +78,12 @@ public class Potrace {
 			startPosition = findStart(currentPixels);
 			if (startPosition != -1) {
 
-				startPoint = new ContourPoint(getU(startPosition, width), getV(
+				startPoint = new Vertex(getU(startPosition, width), getV(
 						startPosition, width));
-				start = new ContourLine(startPoint, new ContourPoint(
-						startPoint.x, startPoint.y + 1));
-
-				lines = new Vector<ContourLine>();
+				start = new Edge(startPoint, new Vertex(startPoint.x,
+						startPoint.y + 1));
+				lines = new Vector<Edge>();
 				currentLine = start;
-
 				contour = new PotraceContour();
 				if (pixels[startPosition] == forground) {
 					contour.setType(PotraceContour.TYPE_OUTER);
@@ -82,9 +120,8 @@ public class Potrace {
 		println(s);
 	}
 
-	private ContourLine getNextLine(ContourLine currentLine, int[] image,
-			int w, int h) {
-		ContourLine newLine;
+	private Edge getNextLine(Edge currentLine, int[] image, int w, int h) {
+		Edge newLine;
 
 		switch (getDirection(currentLine)) {
 		case FROM_TOP:
@@ -109,8 +146,8 @@ public class Potrace {
 		return newLine;
 	}
 
-	private ContourLine getNextLineFromBottom(ContourLine currentLine,
-			int[] image, int w, int h) {
+	private Edge getNextLineFromBottom(Edge currentLine, int[] image, int w,
+			int h) {
 
 		int nextX = -1, nextY = -1;
 
@@ -129,12 +166,12 @@ public class Potrace {
 			nextY = currentLine.to.y;
 		}
 
-		return new ContourLine(new ContourPoint(currentLine.to.x,
-				currentLine.to.y), new ContourPoint(nextX, nextY));
+		return new Edge(new Vertex(currentLine.to.x, currentLine.to.y),
+				new Vertex(nextX, nextY));
 	}
 
-	private ContourLine getNextLineFromRight(ContourLine currentLine,
-			int[] image, int w, int h) {
+	private Edge getNextLineFromRight(Edge currentLine, int[] image, int w,
+			int h) {
 		int nextX = -1, nextY = -1;
 
 		if (isForground(currentLine.to.x - 1, currentLine.to.y - 1, image, w, h)) {
@@ -152,12 +189,11 @@ public class Potrace {
 			nextY = currentLine.to.y + 1;
 		}
 
-		return new ContourLine(new ContourPoint(currentLine.to.x,
-				currentLine.to.y), new ContourPoint(nextX, nextY));
+		return new Edge(new Vertex(currentLine.to.x, currentLine.to.y),
+				new Vertex(nextX, nextY));
 	}
 
-	private ContourLine getNextLineFromLeft(ContourLine currentLine,
-			int[] image, int w, int h) {
+	private Edge getNextLineFromLeft(Edge currentLine, int[] image, int w, int h) {
 		int nextX = -1, nextY = -1;
 
 		if (isForground(currentLine.to.x, currentLine.to.y, image, w, h)) {
@@ -174,12 +210,11 @@ public class Potrace {
 			nextX = currentLine.to.x;
 			nextY = currentLine.to.y - 1;
 		}
-		return new ContourLine(new ContourPoint(currentLine.to.x,
-				currentLine.to.y), new ContourPoint(nextX, nextY));
+		return new Edge(new Vertex(currentLine.to.x, currentLine.to.y),
+				new Vertex(nextX, nextY));
 	}
 
-	private ContourLine getNextLineFromTop(ContourLine currentLine,
-			int[] image, int w, int h) {
+	private Edge getNextLineFromTop(Edge currentLine, int[] image, int w, int h) {
 		int nextX = -1, nextY = -1;
 
 		if (isForground(currentLine.to.x - 1, currentLine.to.y, image, w, h)) {
@@ -195,8 +230,8 @@ public class Potrace {
 			nextX = currentLine.to.x + 1;
 			nextY = currentLine.to.y;
 		}
-		return new ContourLine(new ContourPoint(currentLine.to.x,
-				currentLine.to.y), new ContourPoint(nextX, nextY));
+		return new Edge(new Vertex(currentLine.to.x, currentLine.to.y),
+				new Vertex(nextX, nextY));
 	}
 
 	/**
@@ -204,7 +239,7 @@ public class Potrace {
 	 * @param currentLine
 	 * @return
 	 */
-	private int getDirection(ContourLine currentLine) {
+	private int getDirection(Edge currentLine) {
 		int xDiff = currentLine.from.x - currentLine.to.x;
 		int yDiff = currentLine.from.y - currentLine.to.y;
 
@@ -238,13 +273,13 @@ public class Potrace {
 		return false;
 	}
 
-	private int[] invertPixels(int[] currentPixels, Vector<ContourLine> lines,
+	private int[] invertPixels(int[] currentPixels, Vector<Edge> lines,
 			int width) {
 
 		int direction;
 		int x, y;
 
-		for (ContourLine line : lines) {
+		for (Edge line : lines) {
 			direction = getDirection(line);
 			if (direction == FROM_BOTTOM) {
 				x = line.to.x;
@@ -288,11 +323,11 @@ public class Potrace {
 		return start;
 	}
 
-	public PotraceContour get(int pos) {
+	public PotraceContour getContour(int pos) {
 		return mContours.get(pos);
 	}
 
-	public Vector<PotraceContour> getAll() {
+	public Vector<PotraceContour> getAllContours() {
 		return mContours;
 	}
 
@@ -318,4 +353,17 @@ public class Potrace {
 			System.out.print(s);
 	}
 
+	public void draw(Graphics g, float zoom) {
+		if (!mContours.isEmpty()) {
+			for (PotraceContour c : mContours) {
+				c.drawContour(g, zoom);
+			}
+		}
+
+		if (!mPath.isEmpty()) {
+			for (Path p : mPath) {
+				p.draw(g, zoom);
+			}
+		}
+	}
 }

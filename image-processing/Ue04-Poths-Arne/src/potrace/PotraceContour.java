@@ -9,9 +9,11 @@ import java.util.Vector;
 
 public class PotraceContour {
 
-	LinkedList<ContourLine> contour;
+	private LinkedList<Edge> mContour;
 
 	private int type;
+
+	private int newStartPos;
 
 	public static final int TYPE_INNER = 1;
 	public static final int TYPE_OUTER = 0;
@@ -21,36 +23,60 @@ public class PotraceContour {
 	}
 
 	public PotraceContour() {
-		contour = new LinkedList<ContourLine>();
+		mContour = new LinkedList<Edge>();
 	}
 
-	public void addLine(ContourPoint from, ContourPoint to) {
-		contour.addLast(new ContourLine(from, to));
+	public void addLine(Vertex from, Vertex to) {
+		mContour.addLast(new Edge(from, to));
 	}
 
-	public void addLine(ContourLine line) {
-		contour.addLast(line);
+	public void addLine(Edge line) {
+		mContour.addLast(line);
+	}
+
+	public Edge get(int position) {
+		if (position >= mContour.size()) {
+			return null;
+		}
+		return mContour.get(position);
 	}
 
 	public int size() {
-		return contour.size();
+		return mContour.size();
 	}
 
-	public void addLines(LinkedList<ContourLine> lines) {
-		contour.addAll(lines);
+	public void addLines(LinkedList<Edge> lines) {
+		mContour.addAll(lines);
 	}
 
-	public void addLines(Vector<ContourLine> lines) {
-		contour.addAll(lines);
+	public void addLines(Vector<Edge> lines) {
+		mContour.addAll(lines);
 	}
 
-	public boolean contains(ContourLine obj) {
-		return contour.contains(obj);
+	public Edge getByStart(Vertex start) {
+		Edge edge = null;
+		for (int i = 0; i < mContour.size(); i++) {
+			if (mContour.get(i).from.equals(start)) {
+				this.newStartPos = i;
+				return new Edge(mContour.get(i));
+			}
+			continue;
+		}
+
+		return edge;
+	}
+
+	public int getNewStartPosition() {
+		return newStartPos;
+	}
+
+	public boolean contains(Edge obj) {
+		return mContour.contains(obj);
 	}
 
 	public void printCoordinates() {
 		System.out.println("contour: ");
-		for (ContourLine line : contour) {
+		for (Edge line : mContour) {
 			System.out.print(" " + line.toString());
 		}
 		System.out.println("--------");
@@ -69,7 +95,7 @@ public class PotraceContour {
 		else
 			g2.setStroke(new BasicStroke(1));
 
-		for (ContourLine line : contour) {
+		for (Edge line : mContour) {
 			g.drawLine(Math.round(line.from.x * zoom),
 					Math.round(line.from.y * zoom),
 					Math.round(line.to.x * zoom), Math.round(line.to.y * zoom));

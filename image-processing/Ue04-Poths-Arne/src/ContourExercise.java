@@ -98,7 +98,7 @@ public class ContourExercise extends JPanel {
 		controls.add(methodText, c);
 		controls.add(methodList, c);
 
-		JSlider zoomSlider = new JSlider(110, 3000, 200);
+		JSlider zoomSlider = new JSlider(110, 5000, 200);
 		zoomSlider.addChangeListener(new ChangeListener() {
 
 			@Override
@@ -120,6 +120,7 @@ public class ContourExercise extends JPanel {
 
 		// perform the initial flooding
 		drawImage();
+		zoomSlider.setValue(5000);
 	}
 
 	private File mLoadedOriginalFile;
@@ -189,7 +190,7 @@ public class ContourExercise extends JPanel {
 		potrace.go();
 
 		mImageView.setPixels(pixels);
-		mImageView.addAllContour(potrace.getAll());
+		mImageView.setPotrace(potrace);
 		long time = System.currentTimeMillis() - startTime;
 
 		frame.pack();

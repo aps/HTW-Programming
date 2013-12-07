@@ -17,6 +17,7 @@ import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 
+import potrace.Potrace;
 import potrace.PotraceContour;
 
 /**
@@ -224,15 +225,8 @@ public class ImageView extends JScrollPane {
 		return screen.getGraphics();
 	}
 
-	public void addContour(PotraceContour c) {
-		screen.addContour(c);
-		screen.revalidate();
-		this.revalidate();
-	}
-
-	public void addAllContour(Collection<PotraceContour> c) {
-		screen.addAllContour(c);
-		screen.revalidate();
+	public void setPotrace(Potrace potrace) {
+		screen.setPotrace(potrace);
 		this.revalidate();
 	}
 
@@ -242,19 +236,15 @@ public class ImageView extends JScrollPane {
 
 		private BufferedImage image;
 
-		LinkedList<PotraceContour> contours = new LinkedList<PotraceContour>();
+		private Potrace potrace;
 
 		public ImageScreen(BufferedImage bi) {
 			super();
 			image = bi;
 		}
 
-		public void addContour(PotraceContour c) {
-			contours.add(c);
-		}
-
-		public void addAllContour(Collection<PotraceContour> all) {
-			contours.addAll(all);
+		public void setPotrace(Potrace potrace) {
+			this.potrace = potrace;
 		}
 
 		@Override
@@ -263,14 +253,12 @@ public class ImageView extends JScrollPane {
 			if (image != null)
 				g.drawImage(image, 0, 0, (int) (image.getWidth() * mZoom),
 						(int) (image.getHeight() * mZoom), this);
+
 			if (mZoom > 5.0f) {
 				drawPixels(g, mZoom, image.getWidth(), image.getHeight());
 			}
-
-			if (!contours.isEmpty()) {
-				for (PotraceContour c : contours) {
-					c.drawContour(g, mZoom);
-				}
+			if (potrace != null) {
+				potrace.draw(g, mZoom);
 			}
 
 		}
@@ -284,11 +272,23 @@ public class ImageView extends JScrollPane {
 			int posY;
 			for (int w = 1; w < width; w++) {
 				posX = Math.round(zoom * w);
+				g2.setColor(Color.LIGHT_GRAY);
 				g2.drawLine(posX, 0, posX, Math.round(zoom * (height)));
+				g2.setColor(Color.darkGray);
+				g2.drawLine(posX - Math.round(zoom / 2), 0,
+						posX - Math.round(zoom / 2),
+						Math.round(zoom * (height)));
 			}
+
 			for (int h = 1; h < height; h++) {
+				g2.setColor(Color.LIGHT_GRAY);
 				posY = Math.round(zoom * h);
 				g2.drawLine(0, posY, Math.round(zoom * (width - 1)), posY);
+				g2.setColor(Color.darkGray);
+				g2.drawLine(0, posY - Math.round(zoom / 2),
+						Math.round(zoom * (width - 1)),
+						posY - Math.round(zoom / 2));
+
 			}
 		}
 
