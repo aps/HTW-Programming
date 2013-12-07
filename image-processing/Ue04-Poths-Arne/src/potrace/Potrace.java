@@ -27,39 +27,10 @@ public class Potrace {
 
 	public void go() {
 		findContours();
-		// for (PotraceContour contour : mContours) {
-		// findStraithPaths(contour);
-		// }
-		
-	}
-
-	private void findStraithPaths(PotraceContour currentContour) {
-
-		Vector<Path> pathes = new Vector<Path>();
-		int pos = 1;
-
-		Edge start = currentContour.get(0);
-		Path p;
-		do {
-			p = findMaxPath(start, currentContour, pos);
-			mPath.add(p);
-
-			start = currentContour.getByStart(mPath.get(mPath.size() - 1)
-					.getLast());
-
-			pos = currentContour.getNewStartPosition();
-		} while (mPath.size() < 2
-				|| !mPath.get(mPath.size() - 1).contains(mPath.get(0).get(0)));
-	}
-
-	private Path findMaxPath(Edge start, PotraceContour currentContour, int pos) {
-		D.ln("findMAx: " + start + " pos= " + pos);
-		Path p = new Path(start);
-		while (pos < currentContour.size() && p.add(currentContour.get(pos))) {
-			pos++;
-
+		for (PotraceContour contour : mContours) {
+			contour.findStraightPaths();
 		}
-		return p;
+
 	}
 
 	private void findContours() {
@@ -357,12 +328,6 @@ public class Potrace {
 		if (!mContours.isEmpty()) {
 			for (PotraceContour c : mContours) {
 				c.drawContour(g, zoom);
-			}
-		}
-
-		if (!mPath.isEmpty()) {
-			for (Path p : mPath) {
-				p.draw(g, zoom);
 			}
 		}
 	}

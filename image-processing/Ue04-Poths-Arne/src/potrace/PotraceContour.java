@@ -100,6 +100,42 @@ public class PotraceContour {
 					Math.round(line.from.y * zoom),
 					Math.round(line.to.x * zoom), Math.round(line.to.y * zoom));
 		}
+
+		if (!mPath.isEmpty()) {
+			for (Path p : mPath) {
+				p.draw(g, zoom);
+			}
+		}
+
+	}
+
+	Vector<Path> mPath = new Vector<Path>();
+
+	public void findStraightPaths() {
+		int pos = 1;
+
+		Edge start = get(0);
+		Path p;
+		do {
+			p = findMaxPath(start, pos);
+			mPath.add(p);
+
+			start = getByStart(mPath.get(mPath.size() - 1).getLast());
+
+			pos = getNewStartPosition();
+		} while (mPath.size() < 2
+				|| !mPath.get(mPath.size() - 1).contains(mPath.get(0).get(0)));
+
+	}
+
+	private Path findMaxPath(Edge start, int pos) {
+		D.ln("findMAx: " + start + " pos= " + pos);
+		Path p = new Path(start);
+		while (pos < size() && p.add(get(pos))) {
+			pos++;
+
+		}
+		return p;
 	}
 
 }
