@@ -38,6 +38,8 @@ public class ImageView extends JScrollPane {
 
 	int pixels[] = null; // pixel array in ARGB format
 
+	private boolean mDrawPixels;
+
 	public ImageView(int width, int height) {
 		// construct empty image of given size
 		BufferedImage bi = new BufferedImage(width, height,
@@ -254,7 +256,7 @@ public class ImageView extends JScrollPane {
 				g.drawImage(image, 0, 0, (int) (image.getWidth() * mZoom),
 						(int) (image.getHeight() * mZoom), this);
 
-			if (mZoom > 5.0f) {
+			if (mDrawPixels && mZoom > 5.0f) {
 				drawPixels(g, mZoom, image.getWidth(), image.getHeight());
 			}
 			if (potrace != null) {
@@ -270,21 +272,22 @@ public class ImageView extends JScrollPane {
 
 			int posX;
 			int posY;
+
 			for (int w = 1; w < width; w++) {
 				posX = Math.round(zoom * w);
-				g2.setColor(Color.LIGHT_GRAY);
+				g2.setColor(Color.DARK_GRAY);
 				g2.drawLine(posX, 0, posX, Math.round(zoom * (height)));
-				g2.setColor(Color.darkGray);
+				g2.setColor(Color.LIGHT_GRAY);
 				g2.drawLine(posX - Math.round(zoom / 2), 0,
 						posX - Math.round(zoom / 2),
 						Math.round(zoom * (height)));
 			}
 
 			for (int h = 1; h < height; h++) {
-				g2.setColor(Color.LIGHT_GRAY);
+				g2.setColor(Color.DARK_GRAY);
 				posY = Math.round(zoom * h);
 				g2.drawLine(0, posY, Math.round(zoom * (width - 1)), posY);
-				g2.setColor(Color.darkGray);
+				g2.setColor(Color.LIGHT_GRAY);
 				g2.drawLine(0, posY - Math.round(zoom / 2),
 						Math.round(zoom * (width - 1)),
 						posY - Math.round(zoom / 2));
@@ -300,6 +303,11 @@ public class ImageView extends JScrollPane {
 			} else
 				return new Dimension(800, 600);
 		}
+	}
+
+	public void setDrawPixels(boolean selected) {
+		mDrawPixels = selected;
+		this.repaint();
 	}
 
 }

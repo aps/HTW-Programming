@@ -12,6 +12,7 @@ import java.io.File;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -111,9 +112,25 @@ public class ContourExercise extends JPanel {
 		JPanel images = new JPanel(new GridLayout());
 		images.add(mImageView);
 
+		// bottom controls
+		JPanel bottomControls = new JPanel(new GridBagLayout());
+		bottomControls.add(statusLine, c);
+		JCheckBox drawPixels = new JCheckBox("Draw pixels");
+		drawPixels.addChangeListener(new ChangeListener() {
+
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				mImageView.setDrawPixels(((JCheckBox) e.getSource())
+						.isSelected());
+			}
+		});
+
+		bottomControls.add(drawPixels, c);
+
 		add(controls, BorderLayout.NORTH);
 		add(images, BorderLayout.CENTER);
-		add(statusLine, BorderLayout.SOUTH);
+		// add(statusLine, BorderLayout.SOUTH);
+		add(bottomControls, BorderLayout.SOUTH);
 
 		setBorder(BorderFactory.createEmptyBorder(border, border, border,
 				border));
@@ -195,7 +212,7 @@ public class ContourExercise extends JPanel {
 
 		frame.pack();
 
-		statusLine.setText(message + " in " + time + " ms");
+		statusLine.setText(time + " ms");
 	}
 
 }
