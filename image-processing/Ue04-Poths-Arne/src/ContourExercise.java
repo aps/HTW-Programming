@@ -115,7 +115,7 @@ public class ContourExercise extends JPanel {
 		// bottom controls
 		JPanel bottomControls = new JPanel(new GridBagLayout());
 		bottomControls.add(statusLine, c);
-		JCheckBox drawPixels = new JCheckBox("Draw pixels");
+		JCheckBox drawPixels = new JCheckBox("Pixels");
 		drawPixels.addChangeListener(new ChangeListener() {
 
 			@Override
@@ -124,8 +124,18 @@ public class ContourExercise extends JPanel {
 						.isSelected());
 			}
 		});
+		JCheckBox drawNeighbours = new JCheckBox("Neighbours");
+		drawNeighbours.addChangeListener(new ChangeListener() {
+
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				mImageView.setDrawNeighbours(((JCheckBox) e.getSource())
+						.isSelected());
+			}
+		});
 
 		bottomControls.add(drawPixels, c);
+		bottomControls.add(drawNeighbours, c);
 
 		add(controls, BorderLayout.NORTH);
 		add(images, BorderLayout.CENTER);
@@ -214,5 +224,4 @@ public class ContourExercise extends JPanel {
 
 		statusLine.setText(time + " ms");
 	}
-
 }

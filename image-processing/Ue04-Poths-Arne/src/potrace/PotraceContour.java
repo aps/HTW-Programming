@@ -102,40 +102,190 @@ public class PotraceContour {
 		}
 
 		if (!mPath.isEmpty()) {
-			for (Path p : mPath) {
+			for (StraigthPath p : mPath) {
+				p.draw(g, zoom);
+			}
+		}
+
+		// if (!mPolygons.isEmpty()) {
+		// for (Vector<Path> poly : mPolygons) {
+		// for (Path p : poly) {
+		// p.draw(g, zoom);
+		// }
+		// }
+		// }
+
+		if (!mPolygons.isEmpty()) {
+			Vector<Path> poly = mPolygons.get(0);
+			for (Path p : poly) {
 				p.draw(g, zoom);
 			}
 		}
 
 	}
 
-	Vector<Path> mPath = new Vector<Path>();
+	Vector<StraigthPath> mPath = new Vector<StraigthPath>();
+
+	Vector<Vector<Path>> mPolygons = new Vector<Vector<Path>>();
+
+	protected int[] calculateDistances() {
+		int distance[] = new int[mContour.size()];
+
+		Edge startPrevEdge;
+		Edge startEdge;
+		Edge currentPrevEdge;
+		Edge currentEdge;
+		StraigthPath tempPrevPath;
+		StraigthPath tempPath;
+
+		int size = mContour.size();
+		int nextK, k;
+
+		for (int i = 0; i < size; i++) {
+
+			startEdge = mContour.get(i);
+			tempPath = new StraigthPath(startEdge);
+			k = i;
+
+			// get the new previous start point
+			startPrevEdge = (i - 1) > 0 ? mContour.get((i - 1) % size)
+					: mContour.get(size - 1);
+			tempPrevPath = new StraigthPath(startPrevEdge);
+			nextK = i + 1;
+			do {
+				k++;
+				currentEdge = mContour.get(k % size);
+
+				nextK++;
+				currentPrevEdge = mContour.get(nextK % size);
+			} while (tempPath.add(currentEdge)
+					&& tempPrevPath.add(currentPrevEdge));
+			distance[i] = k;
+		}
+		return distance;
+	}
+
+	private void findAllStraightPaths() {
+		Vector<StraigthPath> closedPath = new Vector<StraigthPath>();
+		Vector<StraigthPath> newPath;
+		for (int i = 0; i < mContour.size(); i++) {
+			newPath = findClosedPath(mContour.get(i), i);
+			if (closedPath.size() == 0 || newPath.size() < closedPath.size()) {
+				closedPath = newPath;
+			}
+		}
+	}
+
+	public Vector<StraigthPath> findClosedPath(Edge start, int offset) {
+		Vector<StraigthPath> temp = new Vector<StraigthPath>();
+		int pos = 1;
+
+		StraigthPath p;
+
+		do {
+			p = findMaxPath(start, pos + offset);
+			mPath.add(p);
+
+			start = getByStart(mPath.get(mPath.size() - 1).getLast());
+			pos = getNewStartPosition();
+
+		} while ((mPath.size() < 2 || !mPath.get(mPath.size() - 1).contains(
+				mPath.get(0).get(0))));
+
+		return temp;
+	}
 
 	public void findStraightPaths() {
 		int pos = 1;
 
 		Edge start = get(0);
-		Path p;
+		StraigthPath p;
+
 		do {
 			p = findMaxPath(start, pos);
 			mPath.add(p);
 
 			start = getByStart(mPath.get(mPath.size() - 1).getLast());
-
 			pos = getNewStartPosition();
-		} while (mPath.size() < 2
-				|| !mPath.get(mPath.size() - 1).contains(mPath.get(0).get(0)));
+
+		} while ((mPath.size() < 2 || !mPath.get(mPath.size() - 1).contains(
+				mPath.get(0).get(0))));
 
 	}
 
-	private Path findMaxPath(Edge start, int pos) {
-		D.ln("findMAx: " + start + " pos= " + pos);
-		Path p = new Path(start);
-		while (pos < size() && p.add(get(pos))) {
+	private StraigthPath findMaxPath(Edge start, int pos) {
+		// D.ln("findMax: " + start + " pos= " + pos);
+		StraigthPath p = new StraigthPath(start);
+		while (pos < size() && p.add(get(pos % size()))) {
 			pos++;
-
 		}
 		return p;
 	}
 
+	public void run() {
+		// calculate valid segments
+		int[] distances = calculateDistances();
+
+		Vector<Vector<Path>> maxDistancePolygones = generateMaxDistancePolygons(distances);
+		mPolygons.addAll(maxDistancePolygones);
+
+	}
+
+	/**
+	 * Generate polygons based on the max distance of the straight paths
+	 * 
+	 * @param distances
+	 * @return
+	 */
+	private Vector<Vector<Path>> generateMaxDistancePolygons(int[] distances) {
+		Vector<Vector<Path>> polygones = new Vector<Vector<Path>>();
+		Vector<Path> currentPolygon;
+
+		int start, k, i;
+		boolean run = true;
+
+		Path p;
+		for (int index = 0; index < distances.length; index++) {
+			run = true;
+			currentPolygon = new Vector<Path>();
+
+			start = index;
+			i = start;
+			k = distances[i];
+
+			do {
+				p = new Path(get(i % distances.length).from, get(k
+						% distances.length).from);
+				currentPolygon.add(p);
+				i = k;
+				k = distances[i % distances.length];
+
+				// check condition
+				if ((i % distances.length) == start
+						|| (i - start) >= distances.length - 1
+						|| (i > (k % distances.length) && i > start && (k % distances.length) > start)
+						|| (i < start && k > start)) {
+					run = false;
+				}
+
+			} while (run);
+			if (i % distances.length != start) {
+				p = new Path(get(i % distances.length).from, get(start).from);
+				currentPolygon.add(p);
+			}
+
+			// add only shortest polygons
+
+			if (polygones.isEmpty()
+					|| polygones.get(0).size() >= currentPolygon.size()) {
+				if (!polygones.isEmpty()
+						&& polygones.get(0).size() > currentPolygon.size()) {
+					polygones.clear();
+				}
+				polygones.add(currentPolygon);
+			}
+			// polygones.add(currentPolygon);
+		}
+		return polygones;
+	}
 }

@@ -17,7 +17,7 @@ public class Potrace {
 	int height;
 
 	Vector<PotraceContour> mContours = new Vector<PotraceContour>(2, 2);
-	Vector<Path> mPath = new Vector<Path>(10, 2);
+	Vector<StraigthPath> mPath = new Vector<StraigthPath>(10, 2);
 
 	public Potrace(int[] pixels, int width, int height) {
 		this.pixels = pixels.clone();
@@ -27,10 +27,17 @@ public class Potrace {
 
 	public void go() {
 		findContours();
+
+		for (PotraceContour contour : mContours) {
+			contour.run();
+		}
+
+	}
+
+	private void findStraightPaths() {
 		for (PotraceContour contour : mContours) {
 			contour.findStraightPaths();
 		}
-
 	}
 
 	private void findContours() {

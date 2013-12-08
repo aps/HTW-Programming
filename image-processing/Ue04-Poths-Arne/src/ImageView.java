@@ -40,6 +40,8 @@ public class ImageView extends JScrollPane {
 
 	private boolean mDrawPixels;
 
+	private boolean mDrawNeighbours;
+
 	public ImageView(int width, int height) {
 		// construct empty image of given size
 		BufferedImage bi = new BufferedImage(width, height,
@@ -216,6 +218,7 @@ public class ImageView extends JScrollPane {
 
 	public void setZoom(float zoom) {
 		mZoom = zoom;
+		screen.revalidate();
 		screen.repaint();
 	}
 
@@ -251,13 +254,15 @@ public class ImageView extends JScrollPane {
 
 		@Override
 		public void paintComponent(Graphics g) {
-			Rectangle r = this.getBounds();
 			if (image != null)
 				g.drawImage(image, 0, 0, (int) (image.getWidth() * mZoom),
 						(int) (image.getHeight() * mZoom), this);
 
 			if (mDrawPixels && mZoom > 5.0f) {
 				drawPixels(g, mZoom, image.getWidth(), image.getHeight());
+			}
+			if (mDrawNeighbours) {
+				drawNeighbours(g, mZoom, image.getWidth(), image.getHeight());
 			}
 			if (potrace != null) {
 				potrace.draw(g, mZoom);
@@ -277,6 +282,26 @@ public class ImageView extends JScrollPane {
 				posX = Math.round(zoom * w);
 				g2.setColor(Color.DARK_GRAY);
 				g2.drawLine(posX, 0, posX, Math.round(zoom * (height)));
+			}
+
+			for (int h = 1; h < height; h++) {
+				g2.setColor(Color.DARK_GRAY);
+				posY = Math.round(zoom * h);
+				g2.drawLine(0, posY, Math.round(zoom * (width - 1)), posY);
+			}
+		}
+
+		private void drawNeighbours(Graphics g, float zoom, int width,
+				int height) {
+			Graphics2D g2 = (Graphics2D) g;
+
+			g2.setColor(Color.LIGHT_GRAY);
+
+			int posX;
+			int posY;
+
+			for (int w = 1; w < width; w++) {
+				posX = Math.round(zoom * w);
 				g2.setColor(Color.LIGHT_GRAY);
 				g2.drawLine(posX - Math.round(zoom / 2), 0,
 						posX - Math.round(zoom / 2),
@@ -284,9 +309,7 @@ public class ImageView extends JScrollPane {
 			}
 
 			for (int h = 1; h < height; h++) {
-				g2.setColor(Color.DARK_GRAY);
 				posY = Math.round(zoom * h);
-				g2.drawLine(0, posY, Math.round(zoom * (width - 1)), posY);
 				g2.setColor(Color.LIGHT_GRAY);
 				g2.drawLine(0, posY - Math.round(zoom / 2),
 						Math.round(zoom * (width - 1)),
@@ -307,6 +330,13 @@ public class ImageView extends JScrollPane {
 
 	public void setDrawPixels(boolean selected) {
 		mDrawPixels = selected;
+		screen.revalidate();
+		this.repaint();
+	}
+
+	public void setDrawNeighbours(boolean selected) {
+		mDrawNeighbours = selected;
+		screen.revalidate();
 		this.repaint();
 	}
 
