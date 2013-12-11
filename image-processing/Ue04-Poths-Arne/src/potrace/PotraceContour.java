@@ -4,6 +4,9 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Vector;
 
@@ -83,22 +86,27 @@ public class PotraceContour {
 	}
 
 	public void drawContour(Graphics g, float zoom) {
-		if (type == TYPE_INNER) {
-			g.setColor(Color.ORANGE);
-		} else {
-			g.setColor(Color.RED);
-		}
 
-		Graphics2D g2 = (Graphics2D) g;
-		if (zoom > 5)
-			g2.setStroke(new BasicStroke(2));
-		else
-			g2.setStroke(new BasicStroke(1));
+		if (mSettings.get("image")) {
 
-		for (Edge line : mContour) {
-			g.drawLine(Math.round(line.from.x * zoom),
-					Math.round(line.from.y * zoom),
-					Math.round(line.to.x * zoom), Math.round(line.to.y * zoom));
+			if (type == TYPE_INNER) {
+				g.setColor(Color.ORANGE);
+			} else {
+				g.setColor(Color.RED);
+			}
+
+			Graphics2D g2 = (Graphics2D) g;
+			if (zoom > 5)
+				g2.setStroke(new BasicStroke(2));
+			else
+				g2.setStroke(new BasicStroke(1));
+
+			for (Edge line : mContour) {
+				g.drawLine(Math.round(line.from.x * zoom),
+						Math.round(line.from.y * zoom),
+						Math.round(line.to.x * zoom),
+						Math.round(line.to.y * zoom));
+			}
 		}
 
 		if (!mPath.isEmpty()) {
@@ -109,16 +117,22 @@ public class PotraceContour {
 
 		// if (!mPolygons.isEmpty()) {
 		// for (Vector<Path> poly : mPolygons) {
+		// // poly.get(0).drawStart(g2, zoom);
 		// for (Path p : poly) {
 		// p.draw(g, zoom);
 		// }
 		// }
 		// }
 
-		if (!mPolygons.isEmpty()) {
-			Vector<Path> poly = mPolygons.get(0);
-			for (Path p : poly) {
-				p.draw(g, zoom);
+		if (mSettings.containsKey("polygon") && mSettings.get("polygon")) {
+			if (!mPolygons.isEmpty()) {
+				Polygon poly = mPolygons.get(0);
+
+				// poly.get(0).drawStart(g2, zoom);
+
+				for (Path p : poly) {
+					p.draw(g, zoom);
+				}
 			}
 		}
 
@@ -126,7 +140,13 @@ public class PotraceContour {
 
 	Vector<StraigthPath> mPath = new Vector<StraigthPath>();
 
-	Vector<Vector<Path>> mPolygons = new Vector<Vector<Path>>();
+	Vector<Polygon> mPolygons = new Vector<Polygon>();
+
+	private int[] mDistances;
+
+	private Sum[] mSums;
+
+	private HashMap<String, Boolean> mSettings;
 
 	protected int[] calculateDistances() {
 		int distance[] = new int[mContour.size()];
@@ -148,85 +168,46 @@ public class PotraceContour {
 			k = i;
 
 			// get the new previous start point
-			startPrevEdge = (i - 1) > 0 ? mContour.get((i - 1) % size)
-					: mContour.get(size - 1);
+			startPrevEdge = (i - 1) > 0 ? mContour.get(i - 1) : mContour
+					.get(size - 1);
 			tempPrevPath = new StraigthPath(startPrevEdge);
 			nextK = i + 1;
-			do {
-				k++;
-				currentEdge = mContour.get(k % size);
 
-				nextK++;
-				currentPrevEdge = mContour.get(nextK % size);
-			} while (tempPath.add(currentEdge)
+			do {
+
+				currentEdge = mContour.get(++k % size);
+				currentPrevEdge = mContour.get(++nextK % size);
+
+			} while ((k - i) <= (size - 3) && tempPath.add(currentEdge)
 					&& tempPrevPath.add(currentPrevEdge));
-			distance[i] = k;
+
+			// k - 1 is the last allowed index for the i
+			distance[i] = k - 1;
 		}
 		return distance;
 	}
 
-	private void findAllStraightPaths() {
-		Vector<StraigthPath> closedPath = new Vector<StraigthPath>();
-		Vector<StraigthPath> newPath;
-		for (int i = 0; i < mContour.size(); i++) {
-			newPath = findClosedPath(mContour.get(i), i);
-			if (closedPath.size() == 0 || newPath.size() < closedPath.size()) {
-				closedPath = newPath;
-			}
-		}
-	}
-
-	public Vector<StraigthPath> findClosedPath(Edge start, int offset) {
-		Vector<StraigthPath> temp = new Vector<StraigthPath>();
-		int pos = 1;
-
-		StraigthPath p;
-
-		do {
-			p = findMaxPath(start, pos + offset);
-			mPath.add(p);
-
-			start = getByStart(mPath.get(mPath.size() - 1).getLast());
-			pos = getNewStartPosition();
-
-		} while ((mPath.size() < 2 || !mPath.get(mPath.size() - 1).contains(
-				mPath.get(0).get(0))));
-
-		return temp;
-	}
-
-	public void findStraightPaths() {
-		int pos = 1;
-
-		Edge start = get(0);
-		StraigthPath p;
-
-		do {
-			p = findMaxPath(start, pos);
-			mPath.add(p);
-
-			start = getByStart(mPath.get(mPath.size() - 1).getLast());
-			pos = getNewStartPosition();
-
-		} while ((mPath.size() < 2 || !mPath.get(mPath.size() - 1).contains(
-				mPath.get(0).get(0))));
-
-	}
-
-	private StraigthPath findMaxPath(Edge start, int pos) {
-		// D.ln("findMax: " + start + " pos= " + pos);
-		StraigthPath p = new StraigthPath(start);
-		while (pos < size() && p.add(get(pos % size()))) {
-			pos++;
-		}
-		return p;
-	}
-
 	public void run() {
+		// calculate the sums for the penalties
+		mSums = calculateSum();
+
 		// calculate valid segments
 		int[] distances = calculateDistances();
 
-		Vector<Vector<Path>> maxDistancePolygones = generateMaxDistancePolygons(distances);
+		mDistances = distances;
+		try {
+			PrintWriter write = new PrintWriter("distance11.txt");
+
+			for (int i = 0; i < distances.length; i++) {
+				write.println(i + " = " + distances[i]);
+			}
+			write.flush();
+			write.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		Vector<Polygon> maxDistancePolygones = generateMaxDistancePolygons(distances);
 		mPolygons.addAll(maxDistancePolygones);
 
 	}
@@ -237,9 +218,9 @@ public class PotraceContour {
 	 * @param distances
 	 * @return
 	 */
-	private Vector<Vector<Path>> generateMaxDistancePolygons(int[] distances) {
-		Vector<Vector<Path>> polygones = new Vector<Vector<Path>>();
-		Vector<Path> currentPolygon;
+	private Vector<Polygon> generateMaxDistancePolygons(int[] distances) {
+		Vector<Polygon> polygones = new Vector<Polygon>();
+		Polygon currentPolyone;
 
 		int start, k, i;
 		boolean run = true;
@@ -247,7 +228,7 @@ public class PotraceContour {
 		Path p;
 		for (int index = 0; index < distances.length; index++) {
 			run = true;
-			currentPolygon = new Vector<Path>();
+			currentPolyone = new Polygon();
 
 			start = index;
 			i = start;
@@ -256,36 +237,79 @@ public class PotraceContour {
 			do {
 				p = new Path(get(i % distances.length).from, get(k
 						% distances.length).from);
-				currentPolygon.add(p);
+				currentPolyone.add(p);
 				i = k;
 				k = distances[i % distances.length];
 
 				// check condition
-				if ((i % distances.length) == start
-						|| (i - start) >= distances.length - 1
-						|| (i > (k % distances.length) && i > start && (k % distances.length) > start)
-						|| (i < start && k > start)) {
+				if (!cycle(i, k, start, distances.length)) {
 					run = false;
 				}
 
 			} while (run);
 			if (i % distances.length != start) {
 				p = new Path(get(i % distances.length).from, get(start).from);
-				currentPolygon.add(p);
+				currentPolyone.add(p);
 			}
 
 			// add only shortest polygons
-
-			if (polygones.isEmpty()
-					|| polygones.get(0).size() >= currentPolygon.size()) {
+			if (currentPolyone.size() > 3
+					&& (polygones.isEmpty() || polygones.get(0).size() >= currentPolyone
+							.size())) {
 				if (!polygones.isEmpty()
-						&& polygones.get(0).size() > currentPolygon.size()) {
+						&& polygones.get(0).size() > currentPolyone.size()) {
 					polygones.clear();
+
 				}
-				polygones.add(currentPolygon);
+				polygones.add(currentPolyone);
 			}
 			// polygones.add(currentPolygon);
 		}
 		return polygones;
+	}
+
+	private boolean cycle(int i, int k, int start, int distances) {
+		return !((i % distances) == start
+				|| (i - start) >= distances - 1
+				|| (i > (k % distances) && i > start && (k % distances) > start) || (i < start && k > start));
+	}
+
+	private double penalty(Path p1) {
+
+		return 0d;
+	}
+
+	private Sum[] calculateSum() {
+		int i, x, y;
+		int n = mContour.size();
+
+		Sum[] sums = new Sum[mContour.size() + 1];
+
+		for (i = sums.length - 1; i >= 0; i--) {
+			sums[i] = new Sum();
+		}
+
+		// origin
+		int x0 = mContour.get(0).from.x;
+		int y0 = mContour.get(0).from.y;
+
+		// initialize to 0
+		sums[0].x2 = sums[0].y2 = sums[0].xy = sums[0].x = sums[0].y = 0d;
+
+		for (i = 0; i < n; i++) {
+			x = mContour.get(i).from.x - x0;
+			y = mContour.get(i).from.y - y0;
+			sums[i + 1].x = sums[i].x + x;
+			sums[i + 1].y = sums[i].y + y;
+			sums[i + 1].x2 = sums[i].x2 + x * x;
+			sums[i + 1].xy = sums[i].xy + x * y;
+			sums[i + 1].y2 = sums[i].y2 + y * y;
+		}
+
+		return sums;
+	}
+
+	public void setSettings(HashMap<String, Boolean> settings) {
+		this.mSettings = settings;
 	}
 }

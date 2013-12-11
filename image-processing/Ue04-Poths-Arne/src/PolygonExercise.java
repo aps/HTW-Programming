@@ -26,14 +26,14 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import potrace.Potrace;
 
-public class ContourExercise extends JPanel {
+public class PolygonExercise extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 	private static final int border = 10;
 	private static final int maxWidth = 600;
 	private static final int maxHeight = 600;
 	private static final String title = "Konturen ";
-	private static final String initalOpen = "klein.png";
+	private static final String initalOpen = "head.png";
 
 	private static JFrame frame;
 
@@ -42,7 +42,7 @@ public class ContourExercise extends JPanel {
 	private JComboBox methodList; // select the flood filling method
 	private JLabel statusLine; // to print some status text
 
-	public ContourExercise() {
+	public PolygonExercise() {
 		super(new BorderLayout(border, border));
 
 		// load the default image
@@ -133,9 +133,30 @@ public class ContourExercise extends JPanel {
 						.isSelected());
 			}
 		});
+		JCheckBox drawImage = new JCheckBox("Image");
+		drawImage.setSelected(true);
+		drawImage.addChangeListener(new ChangeListener() {
+
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				mImageView.setDrawImage(((JCheckBox) e.getSource())
+						.isSelected());
+			}
+		});
+		JCheckBox drawPolygon = new JCheckBox("Polygon");
+		drawPolygon.addChangeListener(new ChangeListener() {
+
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				mImageView.setDrawPolygon(((JCheckBox) e.getSource())
+						.isSelected());
+			}
+		});
 
 		bottomControls.add(drawPixels, c);
 		bottomControls.add(drawNeighbours, c);
+		bottomControls.add(drawImage, c);
+		bottomControls.add(drawPolygon, c);
 
 		add(controls, BorderLayout.NORTH);
 		add(images, BorderLayout.CENTER);
@@ -170,7 +191,7 @@ public class ContourExercise extends JPanel {
 		frame = new JFrame(title + initalOpen);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		JComponent newContentPane = new ContourExercise();
+		JComponent newContentPane = new PolygonExercise();
 		newContentPane.setOpaque(true); // content panes must be opaque
 		frame.setContentPane(newContentPane);
 

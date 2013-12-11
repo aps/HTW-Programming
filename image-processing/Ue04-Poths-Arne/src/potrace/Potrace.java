@@ -1,6 +1,7 @@
 package potrace;
 
 import java.awt.Graphics;
+import java.util.HashMap;
 import java.util.Vector;
 
 public class Potrace {
@@ -30,13 +31,6 @@ public class Potrace {
 
 		for (PotraceContour contour : mContours) {
 			contour.run();
-		}
-
-	}
-
-	private void findStraightPaths() {
-		for (PotraceContour contour : mContours) {
-			contour.findStraightPaths();
 		}
 	}
 
@@ -285,6 +279,8 @@ public class Potrace {
 	int forground = 0xff000000;
 	int background = 0xffffffff;
 
+	private HashMap<String, Boolean> mSettings;
+
 	public int findStart(int[] currentPixels) {
 		int start = -1;
 
@@ -334,8 +330,13 @@ public class Potrace {
 	public void draw(Graphics g, float zoom) {
 		if (!mContours.isEmpty()) {
 			for (PotraceContour c : mContours) {
+				c.setSettings(mSettings);
 				c.drawContour(g, zoom);
 			}
 		}
+	}
+
+	public void setSettings(HashMap<String, Boolean> draw) {
+		this.mSettings = draw;
 	}
 }

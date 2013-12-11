@@ -1,5 +1,11 @@
 package potrace;
 
+/**
+ * Simple logging class
+ * 
+ * @author Arne Poths
+ * 
+ */
 public class D {
 
 	public static void ln(String s) {

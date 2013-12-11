@@ -1,16 +1,14 @@
 // Copyright (C) 2008 by Klaus Jung
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.util.Collection;
-import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import javax.imageio.ImageIO;
 import javax.swing.JComponent;
@@ -18,7 +16,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 
 import potrace.Potrace;
-import potrace.PotraceContour;
 
 /**
  * Edited version
@@ -41,6 +38,10 @@ public class ImageView extends JScrollPane {
 	private boolean mDrawPixels;
 
 	private boolean mDrawNeighbours;
+
+	private boolean mDrawImage = true;
+
+	private boolean mDrawPolygon;
 
 	public ImageView(int width, int height) {
 		// construct empty image of given size
@@ -200,13 +201,12 @@ public class ImageView extends JScrollPane {
 		maxSize = new Dimension(getPreferredSize());
 
 		if (borderX < 0)
-			borderX = maxSize.width - bi.getWidth();
+			borderX = Math.round((maxSize.width - bi.getWidth()) * mZoom);
 		if (borderY < 0)
-			borderY = maxSize.height - bi.getHeight();
+			borderY = Math.round((maxSize.height - bi.getHeight()) * mZoom);
 
 		if (clear)
 			clearImage();
-
 		pixels = null;
 	}
 
@@ -254,7 +254,7 @@ public class ImageView extends JScrollPane {
 
 		@Override
 		public void paintComponent(Graphics g) {
-			if (image != null)
+			if (image != null && mDrawImage)
 				g.drawImage(image, 0, 0, (int) (image.getWidth() * mZoom),
 						(int) (image.getHeight() * mZoom), this);
 
@@ -265,6 +265,11 @@ public class ImageView extends JScrollPane {
 				drawNeighbours(g, mZoom, image.getWidth(), image.getHeight());
 			}
 			if (potrace != null) {
+				HashMap<String, Boolean> draw = new LinkedHashMap<String, Boolean>();
+				draw.put("image", mDrawImage);
+				draw.put("polygon", mDrawPolygon);
+				potrace.setSettings(draw);
+
 				potrace.draw(g, mZoom);
 			}
 
@@ -336,6 +341,18 @@ public class ImageView extends JScrollPane {
 
 	public void setDrawNeighbours(boolean selected) {
 		mDrawNeighbours = selected;
+		screen.revalidate();
+		this.repaint();
+	}
+
+	public void setDrawImage(boolean selected) {
+		mDrawImage = selected;
+		screen.revalidate();
+		this.repaint();
+	}
+
+	public void setDrawPolygon(boolean selected) {
+		mDrawPolygon = selected;
 		screen.revalidate();
 		this.repaint();
 	}
