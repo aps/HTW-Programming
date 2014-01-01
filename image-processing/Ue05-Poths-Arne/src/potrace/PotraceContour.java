@@ -201,17 +201,6 @@ public class PotraceContour {
 		int[] distances = calculateDistances();
 
 		mDistances = distances;
-		try {
-			PrintWriter write = new PrintWriter("distance11.txt");
-
-			for (int i = 0; i < distances.length; i++) {
-				write.println(i + " = " + distances[i]);
-			}
-			write.flush();
-			write.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 
 		Vector<Polygon> maxDistancePolygones = generateMaxDistancePolygons(distances);
 		mPolygons.addAll(maxDistancePolygones);
