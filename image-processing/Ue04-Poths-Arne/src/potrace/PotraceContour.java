@@ -116,14 +116,14 @@ public class PotraceContour {
 		}
 
 		// if (!mPolygons.isEmpty()) {
-		// for (Vector<Path> poly : mPolygons) {
+		// for (Polygon poly : mPolygons) {
 		// // poly.get(0).drawStart(g2, zoom);
 		// for (Path p : poly) {
 		// p.draw(g, zoom);
 		// }
 		// }
 		// }
-
+		
 		if (mSettings.containsKey("polygon") && mSettings.get("polygon")) {
 			if (!mPolygons.isEmpty()) {
 				Polygon poly = mPolygons.get(0);

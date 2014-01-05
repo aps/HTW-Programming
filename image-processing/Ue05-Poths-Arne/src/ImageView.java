@@ -39,9 +39,13 @@ public class ImageView extends JScrollPane {
 
 	private boolean mDrawNeighbours;
 
-	private boolean mDrawImage = true;
+	private boolean mDrawImage = false;
 
-	private boolean mDrawPolygon;
+	private boolean mDrawPolygon = false;
+
+	private boolean mDrawBezier = true;
+
+	private boolean mDrawBezierCurve = false;
 
 	public ImageView(int width, int height) {
 		// construct empty image of given size
@@ -268,6 +272,8 @@ public class ImageView extends JScrollPane {
 				HashMap<String, Boolean> draw = new LinkedHashMap<String, Boolean>();
 				draw.put("image", mDrawImage);
 				draw.put("polygon", mDrawPolygon);
+				draw.put("bezier", mDrawBezier);
+				draw.put("bezierCurve", mDrawBezierCurve);
 				potrace.setSettings(draw);
 
 				potrace.draw(g, mZoom);
@@ -353,6 +359,33 @@ public class ImageView extends JScrollPane {
 
 	public void setDrawPolygon(boolean selected) {
 		mDrawPolygon = selected;
+		screen.revalidate();
+		this.repaint();
+	}
+
+	public void setDrawBezier(boolean selected) {
+		mDrawBezier = selected;
+		screen.revalidate();
+		this.repaint();
+	}
+
+	public void setMinimumAlpha(float f) {
+		screen.potrace.setMinimumAlpha(f);
+		this.repaint();
+	}
+
+	public void setMaximumAlpha(float f) {
+		screen.potrace.setMinimumAlpha(f);
+		this.repaint();
+	}
+
+	public void setMagicFactor(float f) {
+		screen.potrace.setMagicFactor(f);
+		this.repaint();
+	}
+
+	public void setDrawBezierCurve(boolean selected) {
+		mDrawBezierCurve = selected;
 		screen.revalidate();
 		this.repaint();
 	}

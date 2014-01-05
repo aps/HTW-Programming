@@ -32,7 +32,31 @@ public class Potrace {
 		for (PotraceContour contour : mContours) {
 			contour.run();
 		}
-		
+
+	}
+
+	public void setMagicFactor(float factor) {
+		if (mContours != null && !mContours.isEmpty()) {
+			for (PotraceContour contour : mContours) {
+				contour.setMagicFactor(factor);
+			}
+		}
+	}
+
+	public void setMinimumAlpha(float f) {
+		if (mContours != null && !mContours.isEmpty()) {
+			for (PotraceContour contour : mContours) {
+				contour.setBezierMinimum(f);
+			}
+		}
+	}
+
+	public void setMaximumAlpha(float f) {
+		if (mContours != null && !mContours.isEmpty()) {
+			for (PotraceContour contour : mContours) {
+				contour.setBezierMaximum(f);
+			}
+		}
 	}
 
 	private void findContours() {
@@ -340,4 +364,5 @@ public class Potrace {
 	public void setSettings(HashMap<String, Boolean> draw) {
 		this.mSettings = draw;
 	}
+
 }

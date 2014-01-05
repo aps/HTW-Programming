@@ -1,10 +1,10 @@
 package potrace;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Path2D;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Vector;
@@ -18,12 +18,16 @@ public class Bezier {
 
 	private Vector<CenterPoint> mCenterPoint = new Vector<CenterPoint>(10, 5);
 	private Vector<Float> mAlphas = new Vector<Float>(10, 5);
+	private int mType;
+	private boolean mDrawCurve;
+	private boolean mDrawFill;
 
 	public Bezier() {
 	}
 
-	public Bezier(Polygon polygon) {
+	public Bezier(Polygon polygon, int type) {
 		mPolygon = polygon;
+		mType = type;
 	}
 
 	public void run() {
@@ -33,9 +37,11 @@ public class Bezier {
 
 	public void setMagicFactor(float factor) {
 		magicFactor = factor;
+		calculateAlphas();
 	}
 
 	private void calculateAlphas() {
+		mAlphas.clear();
 		Vertex currentCorner;
 		CenterPoint start, end;
 		int size = mCenterPoint.size();
@@ -72,8 +78,6 @@ public class Bezier {
 
 		CenterPoint center = new CenterPoint(path.from.x + x / 2.0f,
 				path.from.y + y / 2.0f);
-
-		D.ln("Center of: " + path + " is : " + center);
 
 		return center;
 	}
@@ -166,8 +170,19 @@ public class Bezier {
 
 			}
 		}
-		// writeSVG(pathString);
-		g.draw(path);
+
+		if (mDrawFill) {
+			g.setColor(mType == PotraceContour.TYPE_INNER ? Color.WHITE
+					: Color.BLACK);
+			g.fill(path);
+		}
+		if (mDrawCurve) {
+			g.setColor(Color.MAGENTA);
+			if (zoom > 10) {
+				g.setStroke(new BasicStroke(2));
+			}
+			g.draw(path);
+		}
 	}
 
 	private void writeSVG(String path) {
@@ -190,4 +205,31 @@ public class Bezier {
 		}
 
 	}
+
+	public void setMinimum(float factor) {
+		this.minimumAlpha = factor;
+		calculateAlphas();
+	}
+
+	public void setMaximum(float factor) {
+		this.maximumAlpha = factor;
+		calculateAlphas();
+	}
+
+	public void setDrawCurve(boolean b) {
+		mDrawCurve = b;
+	}
+
+	public void setDrawFill(boolean b) {
+		mDrawFill = b;
+	}
+
+	public boolean isDrawCurve() {
+		return mDrawCurve;
+	}
+
+	public boolean isDrawFill() {
+		return mDrawFill;
+	}
+
 }

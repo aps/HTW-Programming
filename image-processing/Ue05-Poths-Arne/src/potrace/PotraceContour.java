@@ -133,11 +133,13 @@ public class PotraceContour {
 				}
 			}
 		}
-		if (mSettings.containsKey("bezier") && mSettings.get("bezier") || true) {
-			if (mBezierCurve != null) {
-				mBezierCurve.draw(g, zoom);
-			}
 
+		mBezierCurve.setDrawCurve(mSettings.containsKey("bezierCurve")
+				&& mSettings.get("bezierCurve"));
+		mBezierCurve.setDrawFill(mSettings.containsKey("bezier")
+				&& mSettings.get("bezier"));
+		if (mBezierCurve.isDrawCurve() || mBezierCurve.isDrawFill()) {
+			mBezierCurve.draw(g, zoom);
 		}
 
 	}
@@ -205,7 +207,7 @@ public class PotraceContour {
 		Vector<Polygon> maxDistancePolygones = generateMaxDistancePolygons(distances);
 		mPolygons.addAll(maxDistancePolygones);
 
-		mBezierCurve = new Bezier(mPolygons.get(0));
+		mBezierCurve = new Bezier(mPolygons.get(0), type);
 		mBezierCurve.run();
 
 	}
@@ -304,5 +306,17 @@ public class PotraceContour {
 
 	public void setSettings(HashMap<String, Boolean> settings) {
 		this.mSettings = settings;
+	}
+
+	public void setMagicFactor(float factor) {
+		mBezierCurve.setMagicFactor(factor);
+	}
+
+	public void setBezierMinimum(float factor) {
+		mBezierCurve.setMinimum(factor);
+	}
+
+	public void setBezierMaximum(float factor) {
+		mBezierCurve.setMaximum(factor);
 	}
 }

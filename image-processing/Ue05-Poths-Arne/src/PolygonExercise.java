@@ -9,6 +9,8 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -24,6 +26,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import potrace.D;
 import potrace.Potrace;
 
 public class PolygonExercise extends JPanel {
@@ -42,6 +45,8 @@ public class PolygonExercise extends JPanel {
 	private JComboBox methodList; // select the flood filling method
 	private JLabel statusLine; // to print some status text
 
+	private final DecimalFormat decimalFormat = new DecimalFormat("0.000");
+	
 	public PolygonExercise() {
 		super(new BorderLayout(border, border));
 
@@ -109,6 +114,65 @@ public class PolygonExercise extends JPanel {
 		});
 		controls.add(zoomSlider);
 
+		JPanel bezierControls = new JPanel(new GridBagLayout());
+
+		magicFactor = new JLabel("Factor: ");
+		bezierControls.add(magicFactor);
+		magicFactorSlider = new JSlider(10, 5000, 1500);
+		magicFactorSlider.addChangeListener(new ChangeListener() {
+
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				mImageView.setMagicFactor(((JSlider) e.getSource()).getValue() / 1000f);
+				magicFactor.setText("Factor: "
+						+ decimalFormat.format(((JSlider) e.getSource()).getValue() / 1000f));
+			}
+		});
+		bezierControls.add(magicFactorSlider);
+
+		minFactorLabel = new JLabel("min: ");
+		bezierControls.add(minFactorLabel);
+		
+		minimumAlphaSlider = new JSlider(10, 5000, 550);
+		minimumAlphaSlider.addChangeListener(new ChangeListener() {
+
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				mImageView.setMinimumAlpha(((JSlider) e.getSource()).getValue() / 1000f);
+				
+				minFactorLabel.setText("min: "
+						+ decimalFormat.format(((JSlider) e.getSource()).getValue() / 1000f));
+			}
+		});
+		bezierControls.add(minimumAlphaSlider);
+
+		maxFactorLabel = new JLabel("max: ");
+		bezierControls.add(maxFactorLabel);
+		
+		maximumAlphaSlider = new JSlider(10, 5000, 1000);
+		maximumAlphaSlider.addChangeListener(new ChangeListener() {
+
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				mImageView.setMaximumAlpha(((JSlider) e.getSource()).getValue() / 1000f);
+				maxFactorLabel.setText("max: "
+						+ decimalFormat.format(((JSlider) e.getSource()).getValue() / 1000f));
+			}
+		});
+		bezierControls.add(maximumAlphaSlider);
+
+		JButton resetButton = new JButton("Reset");
+		resetButton.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				magicFactorSlider.setValue(1333);
+				minimumAlphaSlider.setValue(550);
+				maximumAlphaSlider.setValue(1000);
+			}
+		});
+		controls.add(resetButton);
+
 		JPanel images = new JPanel(new GridLayout());
 		images.add(mImageView);
 
@@ -134,7 +198,7 @@ public class PolygonExercise extends JPanel {
 			}
 		});
 		JCheckBox drawImage = new JCheckBox("Image");
-		drawImage.setSelected(true);
+		drawImage.setSelected(false);
 		drawImage.addChangeListener(new ChangeListener() {
 
 			@Override
@@ -152,11 +216,36 @@ public class PolygonExercise extends JPanel {
 						.isSelected());
 			}
 		});
+		JCheckBox drawBezier = new JCheckBox("Bezier");
+		drawBezier.setSelected(true);
+		drawBezier.addChangeListener(new ChangeListener() {
 
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				mImageView.setDrawBezier(((JCheckBox) e.getSource())
+						.isSelected());
+			}
+		});
+
+		JCheckBox drawBezierCurve = new JCheckBox("Bezier-Curve");
+		drawBezierCurve.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				mImageView.setDrawBezierCurve(((JCheckBox) e.getSource())
+						.isSelected());
+			}
+		});
+		
+		
 		bottomControls.add(drawPixels, c);
 		bottomControls.add(drawNeighbours, c);
 		bottomControls.add(drawImage, c);
 		bottomControls.add(drawPolygon, c);
+		bottomControls.add(drawBezier, c);
+		bottomControls.add(drawBezierCurve, c);
+
+		controls.add(bezierControls);
 
 		add(controls, BorderLayout.NORTH);
 		add(images, BorderLayout.CENTER);
@@ -215,6 +304,12 @@ public class PolygonExercise extends JPanel {
 	}
 
 	int mOriginalPixels[];
+	private JSlider maximumAlphaSlider;
+	private JSlider minimumAlphaSlider;
+	private JSlider magicFactorSlider;
+	private JLabel minFactorLabel;
+	private JLabel magicFactor;
+	private JLabel maxFactorLabel;
 
 	protected void drawImage() {
 		if (mOriginalPixels != null) {
